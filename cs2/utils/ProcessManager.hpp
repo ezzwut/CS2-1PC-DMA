@@ -101,31 +101,65 @@ public:
 	StatusCode Attach(std::string ProcessName)
 	{
 		this->AttachProcessName = ProcessName;
-		LPSTR args[] = { (LPSTR)"",(LPSTR)"-device", (LPSTR)"FPGA",(LPSTR)"-norefresh" };
-		this->HANDLE = VMMDLL_Initialize(3, args);
+		LPCSTR args[] = { (LPCSTR)"",(LPCSTR)"-device", (LPCSTR)"FPGA",(LPCSTR)"-norefresh" };
+		this->HANDLE = VMMDLL_Initialize(4, args);
 
 		if (this->HANDLE) {
-			SIZE_T pcPIDs;
-			VMMDLL_PidList(this->HANDLE, nullptr, &pcPIDs);
-			DWORD* pPIDs = (DWORD*)new char[pcPIDs * 4];
-			VMMDLL_PidList(this->HANDLE, pPIDs, &pcPIDs);
-			for (int i = 0; i < pcPIDs; i++)
-			{
-				VMMDLL_PROCESS_INFORMATION ProcessInformation = { 0 };
-				ProcessInformation.magic = VMMDLL_PROCESS_INFORMATION_MAGIC;
-				ProcessInformation.wVersion = VMMDLL_PROCESS_INFORMATION_VERSION;
-				SIZE_T pcbProcessInformation = sizeof(VMMDLL_PROCESS_INFORMATION);
-				VMMDLL_ProcessGetInformation(this->HANDLE, pPIDs[i], &ProcessInformation, &pcbProcessInformation);
-
-
-				if (strcmp(ProcessInformation.szName, "cs2.exe") == 0) {
-					ProcessID = pPIDs[i];
+			std::cout << "[ DMA ] VMMDLL_Initialize succeeded!" << std::endl;
+			SIZE_T pcPIDs = 0;
+			if (!VMMDLL_PidList(this->HANDLE, nullptr, &pcPIDs)) {
+				std::cout << "[ DMA ] VMMDLL_PidList (get count) failed!" << std::endl;
+			} else {
+				std::cout << "[ DMA ] Found " << pcPIDs << " processes." << std::endl;
+				DWORD* pPIDs = (DWORD*)new char[pcPIDs * 4];
+				if (VMMDLL_PidList(this->HANDLE, pPIDs, &pcPIDs)) {
+					bool found_any = false;
+					for (int i = 0; i < pcPIDs; i++)
+					{
+						VMMDLL_PROCESS_INFORMATION ProcessInformation = { 0 };
+						ProcessInformation.magic = VMMDLL_PROCESS_INFORMATION_MAGIC;
+						ProcessInformation.wVersion = VMMDLL_PROCESS_INFORMATION_VERSION;
+						SIZE_T pcbProcessInformation = sizeof(VMMDLL_PROCESS_INFORMATION);
+						if (VMMDLL_ProcessGetInformation(this->HANDLE, pPIDs[i], &ProcessInformation, &pcbProcessInformation)) {
+							found_any = true;
+							if (strcmp(ProcessInformation.szName, "cs2.exe") == 0 || strcmp(ProcessInformation.szName, "CS2.exe") == 0) {
+								std::cout << "[ DMA ] Found cs2.exe with PID: " << pPIDs[i] << std::endl;
+								PVMMDLL_MAP_MODULEENTRY module_entry;
+								if (VMMDLL_Map_GetModuleFromNameU(this->HANDLE, pPIDs[i], (LPCSTR)"client.dll", &module_entry, NULL)) {
+									ProcessID = pPIDs[i];
+									std::cout << "[ DMA ] -> Selected PID " << ProcessID << " (has client.dll)" << std::endl;
+									break;
+								} else {
+									std::cout << "[ DMA ] -> Ignored PID " << pPIDs[i] << " (no client.dll)" << std::endl;
+								}
+							}
+						}
+					}
+					if (!found_any) std::cout << "[ DMA ] VMMDLL_ProcessGetInformation failed for all PIDs!" << std::endl;
+					if (ProcessID == 0) {
+						// Fallback if client.dll wasn't found yet (game still loading)
+						for (int i = 0; i < pcPIDs; i++) {
+							VMMDLL_PROCESS_INFORMATION ProcessInformation = { 0 };
+							ProcessInformation.magic = VMMDLL_PROCESS_INFORMATION_MAGIC;
+							ProcessInformation.wVersion = VMMDLL_PROCESS_INFORMATION_VERSION;
+							SIZE_T pcbProcessInformation = sizeof(VMMDLL_PROCESS_INFORMATION);
+							if (VMMDLL_ProcessGetInformation(this->HANDLE, pPIDs[i], &ProcessInformation, &pcbProcessInformation)) {
+								if (strcmp(ProcessInformation.szName, "cs2.exe") == 0 || strcmp(ProcessInformation.szName, "CS2.exe") == 0) {
+									ProcessID = pPIDs[i];
+								}
+							}
+						}
+					}
+				} else {
+					std::cout << "[ DMA ] VMMDLL_PidList (get array) failed!" << std::endl;
 				}
-
-
+				delete[] (char*)pPIDs;
 			}
+		} else {
+			std::cout << "[ DMA ] VMMDLL_Initialize FAILED!" << std::endl;
 		}
-		_is_invalid(ProcessID, FAILE_PROCESSID);
+		
+		if (ProcessID == 0) return FAILE_PROCESSID;
 
 		Attached = true;
 

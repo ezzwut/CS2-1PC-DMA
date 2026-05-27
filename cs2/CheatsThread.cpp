@@ -1,12 +1,9 @@
 #include "CheatsThread.h"
 
 #include <winnt.h>
-
 #include <thread>
 
-
 using namespace Cheats;
-
 
 VOID UpdateMatrix()
 {
@@ -24,7 +21,7 @@ VOID LoadLocalEntity()
 	while (true)
 	{
 		try {
-			Sleep(1);
+			Sleep(100);
 			DWORD64 LocalControllerAddress = 0;
 			DWORD64 LocalPawnAddress = 0;
 			if (!ProcessMgr.ReadMemory(gGame.GetLocalControllerAddress(), LocalControllerAddress))
@@ -44,6 +41,7 @@ VOID LoadLocalEntity()
 		}
 	}
 }
+
 std::vector<CEntity> TempEntityList;
 
 bool isSameCEntity(std::vector<CEntity>list1, std::vector<CEntity>list2) {
@@ -54,59 +52,49 @@ bool isSameCEntity(std::vector<CEntity>list1, std::vector<CEntity>list2) {
 	return isSame;
 }
 
-VOID UpdatePlayer(int index) {
-	try {
-		CEntity Entity;
-		DWORD64 EntityAddress = 0;
-
-		if (!ProcessMgr.ReadMemory<DWORD64>(gGame.GetEntityListEntry() + (index + 1) * 0x70, EntityAddress))
-			return;
-
-
-		if (EntityAddress == LocalEntityPlayer.Controller.Address)
-		{
-			LocalEntityPlayer.LocalPlayerControllerIndex = index;
-			return;
-		}
-
-
-		if (!Entity.UpdateController(EntityAddress))
-			return;
-
-		if (!Entity.UpdatePawn(Entity.Pawn.Address))
-			return;
-
-		if (!Entity.IsAlive())
-			return;
-
-		TempEntityList.push_back(Entity);
-	}
-	catch (const std::exception& ex) {
-		//std::cout << "Catched exception while get player: " << ex.what() << std::endl;
-	}
-
-}
 VOID LoadEntity()
 {
 	while (true)
 	{
 		try {
 			if (LocalEntityPlayer.Controller.Address == 0) {
+				Sleep(500);
 				continue;
 			}
 
-			std::vector<std::thread> threads;
+			VMMDLL_SCATTER_HANDLE handle = ProcessMgr.CreateScatterHandle();
+			DWORD64 EntityAddresses[64]{ 0 };
+			for (int i = 0; i < 64; i++)
+			{
+				ProcessMgr.AddScatterReadRequest(handle, gGame.GetEntityListEntry() + (i + 1) * 0x70, &EntityAddresses[i], sizeof(DWORD64));
+			}
+			ProcessMgr.ExecuteReadScatter(handle);
+
 			TempEntityList.clear();
 			for (int i = 0; i < 64; i++)
 			{
-				threads.push_back(std::thread(UpdatePlayer, i));
-			}
-			for (auto& t : threads) {
-				if (t.joinable()) {
-					t.join();
+				DWORD64 EntityAddress = EntityAddresses[i];
+				if (EntityAddress == 0)
+					continue;
+
+				if (EntityAddress == LocalEntityPlayer.Controller.Address)
+				{
+					LocalEntityPlayer.LocalPlayerControllerIndex = i;
+					continue;
 				}
+
+				CEntity Entity;
+				if (!Entity.UpdateController(EntityAddress))
+					continue;
+
+				if (!Entity.UpdatePawn(Entity.Pawn.Address))
+					continue;
+
+				if (!Entity.IsAlive())
+					continue;
+
+				TempEntityList.push_back(Entity);
 			}
-			threads.clear();
 
 			if (!isSameCEntity(EntityList, TempEntityList)) {
 				EntityList = TempEntityList;
@@ -115,7 +103,7 @@ VOID LoadEntity()
 		catch (const std::exception& ex) {
 			//std::cout << "LoadEntity: " << ex.what() << std::endl;
 		}
-		Sleep(1);
+		Sleep(500);
 	}
 }
 
@@ -129,11 +117,8 @@ VOID UpdateEntityListEntry()
 			uintptr_t mapaddress;
 			uintptr_t mapaddress2;
 
-
 			ProcessMgr.ReadMemory(gGame.GetClientDLLAddress() + Offset::GlobalVars, mapaddress);
-
 			ProcessMgr.ReadMemory(mapaddress + 0x0180, mapaddress2);
-
 			ProcessMgr.ReadMemory(mapaddress2, mapname);
 
 			Sleep(5000);
@@ -156,10 +141,8 @@ VOID UpdateWeaponName(int index) {
 }
 
 VOID UpdateVlue(int index) {
-
 	std::vector<BoneJointPos> BonePosList;
 	try {
-
 		for (int i = 0; i < 30; i++)
 		{
 			Vec2 ScreenPos;
@@ -209,18 +192,10 @@ VOID ScatterReadThreads()
 			}
 			ProcessMgr.ExecuteReadScatter(handle);
 
-
-			std::vector<std::thread> threads;
 			for (int i = 0; i < EntityList.size(); i++)
 			{
-				threads.push_back(std::thread(UpdateVlue, i));
+				UpdateVlue(i);
 			}
-			for (auto& t : threads) {
-				if (t.joinable()) {
-					t.join();
-				}
-			}
-			threads.clear();
 		}
 		catch (const std::exception& ex) {
 			//std::cout << "5: " << ex.what() << std::endl;
@@ -241,18 +216,10 @@ VOID UpdateWeaponNameThreads()
 		try {
 			Sleep(100);
 
-			std::vector<std::thread> threads;
 			for (int i = 0; i < EntityList.size(); i++)
 			{
-				if (EntityList.size() <= i) return;
-				threads.push_back(std::thread(UpdateWeaponName, i));
+				UpdateWeaponName(i);
 			}
-			for (auto& t : threads) {
-				if (t.joinable()) {
-					t.join();
-				}
-			}
-			threads.clear();
 		}
 		catch (const std::exception& ex) {
 			//std::cout << "6: " << ex.what() << std::endl;
@@ -270,9 +237,7 @@ VOID KeysCheckThread() {
 	while (true)
 	{
 		Sleep(10);
-		Keys::LeftKey = ProcessMgr.is_key_down(VK_LBUTTON);
-		Keys::MenuKey = ProcessMgr.is_key_down(VK_F8);
-		Keys::AimKey = ProcessMgr.is_key_down(AimControl::HotKey);
-		Keys::TriggerKey = ProcessMgr.is_key_down(TriggerBot::HotKey);
+		Keys::LeftKey = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+		Keys::MenuKey = (GetAsyncKeyState(VK_INSERT) & 0x8000) != 0;
 	}
 }
