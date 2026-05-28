@@ -24,10 +24,33 @@ VOID LoadLocalEntity()
 			Sleep(100);
 			DWORD64 LocalControllerAddress = 0;
 			DWORD64 LocalPawnAddress = 0;
-			if (!ProcessMgr.ReadMemory(gGame.GetLocalControllerAddress(), LocalControllerAddress))
+			ProcessMgr.ReadMemory(gGame.GetLocalControllerAddress(), LocalControllerAddress);
+			ProcessMgr.ReadMemory(gGame.GetLocalPawnAddress(), LocalPawnAddress);
+
+			if (LocalPawnAddress == 0)
 				continue;
-			if (!ProcessMgr.ReadMemory(gGame.GetLocalPawnAddress(), LocalPawnAddress))
+
+			if (LocalControllerAddress == 0)
+			{
+				for (int i = 0; i < 64; i++)
+				{
+					DWORD64 EntityAddress = 0;
+					ProcessMgr.ReadMemory<DWORD64>(gGame.GetEntityListEntry() + (i + 1) * 0x70, EntityAddress);
+					if (EntityAddress == 0) continue;
+
+					CEntity temp;
+					if (temp.UpdateController(EntityAddress)) {
+						if (temp.Pawn.Address == LocalPawnAddress) {
+							LocalControllerAddress = EntityAddress;
+							break;
+						}
+					}
+				}
+			}
+
+			if (LocalControllerAddress == 0)
 				continue;
+
 			CEntity LocalPlayer;
 			if (!LocalPlayer.UpdateController(LocalControllerAddress))
 				continue;
