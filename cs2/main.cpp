@@ -3,16 +3,13 @@
 #include "Language.h"
 #include "Globals.h"
 
-#include "KMbox/KmboxB.h"
-#include "KMbox/KmBoxNetManager.h"
-#include "KMbox/kmboxNetPlusManager.cpp"
 
 #ifndef NTSTATUS
 typedef long NTSTATUS;
 #endif
 
 #include "CheatsThread.h"
-
+#include "base/MenuConfig.hpp"
 #include <iostream>
 #include <filesystem>
 #include <windows.h>
@@ -31,49 +28,19 @@ std::string readFile(const std::string& path) {
 
 
 void main(HMODULE module) {
-	std::cout << " -- Software coded by github.com/IvanAcoola -- " << std::endl << std::endl;
+	SetConsoleTitleA("SysUpdate");
+	ShowWindow(GetConsoleWindow(), SW_HIDE);
+
+	std::cout << " -- Software coded by github.com/ezzwut -- " << std::endl << std::endl;
 
 	std::cout << "[ DMA ] Starting..." << std::endl;
-	settingsJson.LoadSettings();
-	std::cout << "[ DMA ] Settings parsed" << std::endl;
-	{
-		const auto& type = settingsJson.type;
-		if (type == "net") {
-			if (KmBoxMgr.InitDevice(settingsJson.ip, settingsJson.port, settingsJson.uuid) != 0)
-			{
-				std::cout << "[ DMA ] Error! KmBoxNet Initialize failed." << std::endl;
-				return;
-			}
-			KmBox::type = "net";
-			std::cout << "[ DMA ] Net connected!" << std::endl;
-		}
-		else if (type == "net+") {
-			if (kmboxnew::kmNet_init(const_cast<char*>(settingsJson.ip.c_str()), (char*)settingsJson.port, const_cast<char*>(settingsJson.uuid.c_str()))) {
-				std::cout << "[ DMA ] Error! KmBoxNet-2 Initialize failed." << std::endl;
-				return;
-			}
-			KmBox::type = "net2";
-			std::cout << "[ DMA ] Net+ connected!" << std::endl;
-		}
-		else if (type == "b") {
-			if (kmBoxBMgr.init() != 0) {
-				std::cout << "[ DMA ] Error! KmBoxB Initialize failed." << std::endl;
-				return;
-			}
-			std::cout << "[ DMA ] BPro connected!" << std::endl;
-
-			KmBox::type = "b";
-		}
-		else {
-			KmBox::type = "None";
-		}
-	}
 
 	auto ProcessStatus = ProcessMgr.Attach("cs2.exe");
 
 	if (ProcessStatus != StatusCode::SUCCEED)
 	{
 		std::cout << "[ DMA ] Error! Failed to attach process, StatusCode:" << ProcessStatus << std::endl;
+		system("pause"); // user pause
 		return;
 	}
 
@@ -121,12 +88,13 @@ void main(HMODULE module) {
 	CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)(KeysCheckThread), NULL, 0, 0);
 
 	if (settingsJson.language == "en") lang.english();
-	else if (settingsJson.language == "ch") lang.chineese();
+	else if (settingsJson.language == "de") lang.german();
+	else if (settingsJson.language == "tr") lang.turkish();
 	else lang.english();
 
 	SetThreadPriority(GetCurrentThread(), HIGH_PRIORITY_CLASS);
 
 	std::cout << "[ DMA ] Enjoy gameplay $" << std::endl;
 
-	Gui.NewWindow("CS2DMA", Vec2(GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN)), Cheats::Run);
+	Gui.AttachAnotherWindow("Counter-Strike 2", "SDL_app", Cheats::Run);
 }
