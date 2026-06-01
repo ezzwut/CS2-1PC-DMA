@@ -69,7 +69,7 @@ void main(HMODULE module) {
 	SetConsoleTitleA("SysUpdate");
 	KillOtherInstances();
 
-	std::cout << " -- Premium CS2 DMA Cheat -- " << std::endl << std::endl;
+	std::cout << " -- Software coded by github.com/ezzwut -- " << std::endl << std::endl;
 
 	std::cout << "[ DMA ] Starting..." << std::endl;
 
