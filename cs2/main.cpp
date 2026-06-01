@@ -27,11 +27,49 @@ std::string readFile(const std::string& path) {
 }
 
 
+#include <TlHelp32.h>
+
+void KillOtherInstances() {
+    DWORD currentPid = GetCurrentProcessId();
+    char currentExeName[MAX_PATH];
+    GetModuleFileNameA(NULL, currentExeName, MAX_PATH);
+    std::string exePath = currentExeName;
+    size_t lastSlash = exePath.find_last_of("\\/");
+    std::string exeName = (lastSlash != std::string::npos) ? exePath.substr(lastSlash + 1) : exePath;
+
+    HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (hSnap != INVALID_HANDLE_VALUE) {
+        PROCESSENTRY32 pe;
+        pe.dwSize = sizeof(PROCESSENTRY32);
+        if (Process32First(hSnap, &pe)) {
+            do {
+                if (pe.th32ProcessID != currentPid) {
+                    std::string pName;
+#ifdef UNICODE
+                    std::wstring wName = pe.szExeFile;
+                    pName = std::string(wName.begin(), wName.end());
+#else
+                    pName = pe.szExeFile;
+#endif
+                    if (pName.find("SysUpdate") == 0 || pName == exeName) {
+                        HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, pe.th32ProcessID);
+                        if (hProcess) {
+                            TerminateProcess(hProcess, 0);
+                            CloseHandle(hProcess);
+                        }
+                    }
+                }
+            } while (Process32Next(hSnap, &pe));
+        }
+        CloseHandle(hSnap);
+    }
+}
+
 void main(HMODULE module) {
 	SetConsoleTitleA("SysUpdate");
-	ShowWindow(GetConsoleWindow(), SW_HIDE);
+	KillOtherInstances();
 
-	std::cout << " -- Software coded by github.com/ezzwut -- " << std::endl << std::endl;
+	std::cout << " -- Premium CS2 DMA Cheat -- " << std::endl << std::endl;
 
 	std::cout << "[ DMA ] Starting..." << std::endl;
 

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Game.h"
 #include "Bone.h"
 #include <map>
@@ -11,40 +11,25 @@ namespace MenuConfig
 
 	inline std::string path = "config";
 
-	inline bool ShowBoneESP = false;
+	inline bool ShowBoneESP = true;
 	inline bool ShowBoxESP = true;
 	inline bool ShowHealthBar = true;
+	inline bool ShowArmorBar = true;
 	inline bool ShowWeaponESP = true;
-	inline bool ShowDistance = false;
+	inline bool ShowDistance = true;
 	inline bool ShowEyeRay = false;
 	inline bool ShowPlayerName = true;
-
-	inline bool AimBot = true;
-	inline int AimBotHotKey = 4;
-	// 0: head 1: neck 3: spine
-	inline int  AimPosition = 1;
-	inline int  AimPositionPistol = 0;
-	inline int  AimPositionSniper = 2;
-	inline int  AimPositionShotguns = 2;
-	inline int  AimPositionRifles = 0;
-
-	inline DWORD  AimPositionIndex = BONEINDEX::neck_0;
-	inline DWORD  AimPositionIndexPistol = BONEINDEX::head;
-	inline DWORD  AimPositionIndexSniper = BONEINDEX::spine_1;
-	inline DWORD  AimPositionIndexShotGuns = BONEINDEX::spine_1;
-	inline DWORD  AimPositionIndexRifles = BONEINDEX::neck_0;
-
-
-	inline bool ShowAimFovRange = false;
-	inline ImColor AimFovRangeColor = ImColor(230, 230, 230, 255);
-	inline bool VisibleCheck = true;
+	inline bool ShowHeadESP = false;
+	inline bool DarkMode = false;
+	
 	// 0: normal 1: dynamic
 	inline int  BoxType = 0;
 	// 0: Vertical 1: Horizontal
 	inline int  HealthBarType = 0;
 
+	inline ImColor BoxColor = ImColor(61, 171, 155, 255);
 	inline ImColor BoneColor = ImColor(255, 255, 255, 255);
-	inline ImColor BoxColor = ImColor(255, 255, 255, 255);
+	inline ImColor HeadESPColor = ImColor(255, 0, 0, 255);
 	inline ImColor EyeRayColor = ImColor(255, 0, 0, 255);
 
 	inline bool ShowMenu = true;
@@ -53,13 +38,10 @@ namespace MenuConfig
 
 	inline int RadarType = 0;
 
-	inline bool TriggerBot = true;
-	inline int TriggerHotKey = 4;
-	inline int TriggerMode = 0;
-	inline bool Pressed = false;
-	inline bool Shoot = false;
-
 	inline bool TeamCheck = true;
+	inline bool BypassOBS = false;
+	inline int VisibleCheck = 1;
+	inline bool ShowConsole = false;
 
 	inline bool ShowLineToEnemy = false;
 	inline ImColor LineToEnemyColor = ImColor(255, 255, 255, 220);

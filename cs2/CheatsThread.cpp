@@ -32,7 +32,7 @@ VOID LoadLocalEntity()
 
 			if (LocalControllerAddress == 0)
 			{
-				for (int i = 0; i < 64; i++)
+				for (int i = 0; i < 128; i++)
 				{
 					DWORD64 EntityAddress = 0;
 					ProcessMgr.ReadMemory<DWORD64>(gGame.GetEntityListEntry() + (i + 1) * 0x70, EntityAddress);
@@ -86,15 +86,15 @@ VOID LoadEntity()
 			}
 
 			VMMDLL_SCATTER_HANDLE handle = ProcessMgr.CreateScatterHandle();
-			DWORD64 EntityAddresses[64]{ 0 };
-			for (int i = 0; i < 64; i++)
+			DWORD64 EntityAddresses[128]{ 0 };
+			for (int i = 0; i < 128; i++)
 			{
 				ProcessMgr.AddScatterReadRequest(handle, gGame.GetEntityListEntry() + (i + 1) * 0x70, &EntityAddresses[i], sizeof(DWORD64));
 			}
 			ProcessMgr.ExecuteReadScatter(handle);
 
 			TempEntityList.clear();
-			for (int i = 0; i < 64; i++)
+			for (int i = 0; i < 128; i++)
 			{
 				DWORD64 EntityAddress = EntityAddresses[i];
 				if (EntityAddress == 0)

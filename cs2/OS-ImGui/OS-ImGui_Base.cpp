@@ -1,6 +1,5 @@
 #include "OS-ImGui_Base.h"
 
-#include "../CustomFont.h"
 
 
 /****************************************************
@@ -22,9 +21,14 @@ namespace OSImGui
 
         ImGuiIO& io = ImGui::GetIO(); (void)io;
 
-        ImFont* font = io.Fonts->AddFontFromMemoryTTF((void*)myFont, sizeof(myFont), 15.0f, NULL, io.Fonts->GetGlyphRangesChineseFull());
+        ImFontConfig font_cfg;
+        font_cfg.OversampleH = 1;
+        font_cfg.OversampleV = 1;
+        font_cfg.PixelSnapH = true;
+        
+        ImFont* font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\tahoma.ttf", 13.0f, &font_cfg, io.Fonts->GetGlyphRangesDefault());
 
-        iconFont = io.Fonts->AddFontFromMemoryTTF((void*)myFont, sizeof(myFont), 18.0f, NULL, io.Fonts->GetGlyphRangesChineseFull());
+        iconFont = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\tahoma.ttf", 16.0f, &font_cfg, io.Fonts->GetGlyphRangesDefault());
 
         io.Fonts->Build();
 

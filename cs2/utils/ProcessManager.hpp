@@ -101,8 +101,8 @@ public:
 	StatusCode Attach(std::string ProcessName)
 	{
 		this->AttachProcessName = ProcessName;
-		LPCSTR args[] = { (LPCSTR)"",(LPCSTR)"-device", (LPCSTR)"FPGA",(LPCSTR)"-norefresh" };
-		this->HANDLE = VMMDLL_Initialize(4, args);
+		LPCSTR args[] = { (LPCSTR)"",(LPCSTR)"-device", (LPCSTR)"FPGA" };
+		this->HANDLE = VMMDLL_Initialize(3, args);
 
 		if (this->HANDLE) {
 			std::cout << "[ DMA ] VMMDLL_Initialize succeeded!" << std::endl;
@@ -159,7 +159,18 @@ public:
 			std::cout << "[ DMA ] VMMDLL_Initialize FAILED!" << std::endl;
 		}
 		
-		if (ProcessID == 0) return FAILE_PROCESSID;
+		if (this->HANDLE == nullptr) {
+			return FAILE_PROCESSID; // Or some other failure code
+		}
+
+		if (ProcessID == 0) {
+			std::cout << "[ DMA ] Game not found. Waiting for cs2.exe to start..." << std::endl;
+			while (ProcessID == 0) {
+				RefindGame();
+				Sleep(2000);
+			}
+			std::cout << "[ DMA ] Found cs2.exe with PID: " << ProcessID << std::endl;
+		}
 
 		Attached = true;
 
@@ -168,24 +179,32 @@ public:
 
 	void RefindGame() {
 		if (this->HANDLE) {
-			SIZE_T pcPIDs;
-			VMMDLL_PidList(this->HANDLE, nullptr, &pcPIDs);
-			DWORD* pPIDs = (DWORD*)new char[pcPIDs * 4];
-			VMMDLL_PidList(this->HANDLE, pPIDs, &pcPIDs);
-			for (int i = 0; i < pcPIDs; i++)
-			{
-				VMMDLL_PROCESS_INFORMATION ProcessInformation = { 0 };
-				ProcessInformation.magic = VMMDLL_PROCESS_INFORMATION_MAGIC;
-				ProcessInformation.wVersion = VMMDLL_PROCESS_INFORMATION_VERSION;
-				SIZE_T pcbProcessInformation = sizeof(VMMDLL_PROCESS_INFORMATION);
-				VMMDLL_ProcessGetInformation(this->HANDLE, pPIDs[i], &ProcessInformation, &pcbProcessInformation);
-
-
-				if (strcmp(ProcessInformation.szName, "cs2.exe") == 0) {
-					ProcessID = pPIDs[i];
+			VMMDLL_ConfigSet(this->HANDLE, VMMDLL_OPT_REFRESH_ALL, 1);
+			SIZE_T pcPIDs = 0;
+			if (VMMDLL_PidList(this->HANDLE, nullptr, &pcPIDs) && pcPIDs > 0) {
+				DWORD* pPIDs = (DWORD*)new char[pcPIDs * 4];
+				if (VMMDLL_PidList(this->HANDLE, pPIDs, &pcPIDs)) {
+					bool foundCs2 = false;
+					for (int i = 0; i < pcPIDs; i++)
+					{
+						VMMDLL_PROCESS_INFORMATION ProcessInformation = { 0 };
+						ProcessInformation.magic = VMMDLL_PROCESS_INFORMATION_MAGIC;
+						ProcessInformation.wVersion = VMMDLL_PROCESS_INFORMATION_VERSION;
+						SIZE_T pcbProcessInformation = sizeof(VMMDLL_PROCESS_INFORMATION);
+						if (VMMDLL_ProcessGetInformation(this->HANDLE, pPIDs[i], &ProcessInformation, &pcbProcessInformation)) {
+							if (_stricmp(ProcessInformation.szName, "cs2.exe") == 0) {
+								ProcessID = pPIDs[i];
+								foundCs2 = true;
+							}
+						}
+					}
+					if (!foundCs2) std::cout << "[ DMA ] RefindGame: Scanned " << pcPIDs << " processes, still no cs2.exe." << std::endl;
+				} else {
+					std::cout << "[ DMA ] RefindGame: VMMDLL_PidList array failed!" << std::endl;
 				}
-
-
+				delete[] (char*)pPIDs;
+			} else {
+				std::cout << "[ DMA ] RefindGame: VMMDLL_PidList count failed or 0 PIDs!" << std::endl;
 			}
 		}
 	}

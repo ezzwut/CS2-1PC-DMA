@@ -4,6 +4,6 @@
 #include <vector>
 
 namespace globalVars {
-	inline float windowx = 800;
-	inline float windowy = 500;
+	inline float windowx = 600;
+	inline float windowy = 400;
 }

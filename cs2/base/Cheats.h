@@ -3,9 +3,7 @@
 #include "../radar/mapsdata.h"
 #include "Game.h"
 #include "Entity.h"
-#include "AimBot.hpp"
 #include "../radar/Radar.h"
-#include "TriggerBot.h"
 
 
 namespace Cheats

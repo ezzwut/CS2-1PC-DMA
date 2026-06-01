@@ -208,75 +208,72 @@ namespace OSImGui
         CleanImGui();
     }
 
-    bool OSImGui_External::CreateMyWindow()
-    {
-        WNDCLASSEXW wc = { sizeof(wc), CS_CLASSDC, WndProc_External, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, Window.wClassName.c_str(), NULL };
-        RegisterClassExW(&wc);
-        if (Type == ATTACH)
-        {
+	bool OSImGui_External::CreateMyWindow()
+	{
+		WNDCLASSEXW wc = { sizeof(wc), CS_CLASSDC, WndProc_External, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, Window.wClassName.c_str(), NULL };
+		RegisterClassExW(&wc);
+		if (Type == ATTACH)
+		{
 
-			Window.hWnd = CreateWindowExW(WS_EX_TOPMOST | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW, Window.wClassName.c_str(), Window.wName.c_str(), WS_POPUP, CW_USEDEFAULT, CW_USEDEFAULT, 100, 100, NULL, NULL, GetModuleHandle(NULL), NULL);
+			Window.hWnd = CreateWindowExW(WS_EX_TOPMOST | WS_EX_TRANSPARENT | WS_EX_LAYERED | WS_EX_TOOLWINDOW, Window.wClassName.c_str(), Window.wName.c_str(), WS_POPUP, CW_USEDEFAULT, CW_USEDEFAULT, 100, 100, NULL, NULL, GetModuleHandle(NULL), NULL);
 			SetLayeredWindowAttributes(Window.hWnd, 0, 255, LWA_ALPHA);
-        }
-        else
-        {
-            Window.BgColor = IM_COL32_BLACK;
-           // Window.hWnd = CreateWindowExW(WS_EX_TOPMOST | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW, Window.wClassName.c_str(), Window.wName.c_str(), WS_POPUP, CW_USEDEFAULT, CW_USEDEFAULT, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN), NULL, NULL, GetModuleHandle(NULL), NULL);
+		}
+		else
+		{
+			Window.BgColor = IM_COL32_BLACK;
+			Window.hWnd = CreateWindowExW(WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW, Window.wClassName.c_str(), Window.wName.c_str(), WS_POPUP, CW_USEDEFAULT, CW_USEDEFAULT, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN), NULL, NULL, GetModuleHandle(NULL), NULL);
+		}
+		Window.hInstance = wc.hInstance;
 
-            Window.hWnd = CreateWindowExW(WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW, Window.wClassName.c_str(), Window.wName.c_str(), WS_POPUP, CW_USEDEFAULT, CW_USEDEFAULT, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN), NULL, NULL, GetModuleHandle(NULL), NULL);
-        }
-        Window.hInstance = wc.hInstance;
+		if (!g_Device.CreateDeviceD3D(Window.hWnd))
+		{
+			g_Device.CleanupDeviceD3D();
+			UnregisterClassW(wc.lpszClassName, wc.hInstance);
+			return false;
+		}
 
-        if (!g_Device.CreateDeviceD3D(Window.hWnd))
-        {
-            g_Device.CleanupDeviceD3D();
-            UnregisterClassW(wc.lpszClassName, wc.hInstance);
-            return false;
-        }
+		ShowWindow(Window.hWnd, SW_SHOWDEFAULT);
+		UpdateWindow(Window.hWnd);
 
-        ShowWindow(Window.hWnd, SW_SHOWDEFAULT);
-        UpdateWindow(Window.hWnd);
+		return Window.hWnd != NULL;
+	}
 
-        return Window.hWnd != NULL;
-    }
+	bool OSImGui_External::UpdateWindowData()
+	{
+		POINT Point{};
+		RECT Rect{};
 
-    bool OSImGui_External::UpdateWindowData()
-    {
-        POINT Point{};
-        RECT Rect{};
+		DestWindow.hWnd = FindWindowA(
+			(DestWindow.ClassName.empty() ? NULL : DestWindow.ClassName.c_str()),
+			(DestWindow.Name.empty() ? NULL : DestWindow.Name.c_str()));
+		if (DestWindow.hWnd == NULL)
+			return false;
 
-        DestWindow.hWnd = FindWindowA(
-            (DestWindow.ClassName.empty() ? NULL : DestWindow.ClassName.c_str()),
-            (DestWindow.Name.empty() ? NULL : DestWindow.Name.c_str()));
-        if (DestWindow.hWnd == NULL)
-            return false;
+		GetClientRect(DestWindow.hWnd, &Rect);
+		ClientToScreen(DestWindow.hWnd, &Point);
 
-        GetClientRect(DestWindow.hWnd, &Rect);
-        ClientToScreen(DestWindow.hWnd, &Point);
+		Window.Pos = DestWindow.Pos = Vec2(static_cast<float>(Point.x), static_cast<float>(Point.y));
+		Window.Size = DestWindow.Size = Vec2(static_cast<float>(Rect.right), static_cast<float>(Rect.bottom));
 
-        Window.Pos = DestWindow.Pos = Vec2(static_cast<float>(Point.x), static_cast<float>(Point.y));
-        Window.Size = DestWindow.Size = Vec2(static_cast<float>(Rect.right), static_cast<float>(Rect.bottom));
+		SetWindowPos(Window.hWnd, HWND_TOPMOST, (int)Window.Pos.x, (int)Window.Pos.y, (int)Window.Size.x, (int)Window.Size.y, SWP_SHOWWINDOW);
 
-        SetWindowPos(Window.hWnd, HWND_TOPMOST, (int)Window.Pos.x, (int)Window.Pos.y, (int)Window.Size.x, (int)Window.Size.y, SWP_SHOWWINDOW);
+		POINT MousePos;
+		GetCursorPos(&MousePos);
+		ScreenToClient(Window.hWnd, &MousePos);
+		ImGui::GetIO().MousePos.x = static_cast<float>(MousePos.x);
+		ImGui::GetIO().MousePos.y = static_cast<float>(MousePos.y);
 
-        // ���ƴ���״̬�л�
-        POINT MousePos;
-        GetCursorPos(&MousePos);
-        ScreenToClient(Window.hWnd, &MousePos);
-        ImGui::GetIO().MousePos.x = static_cast<float>(MousePos.x);
-        ImGui::GetIO().MousePos.y = static_cast<float>(MousePos.y);
+		if(false)
+			SetWindowDisplayAffinity(Window.hWnd, WDA_EXCLUDEFROMCAPTURE);
+		else
+			SetWindowDisplayAffinity(Window.hWnd, WDA_NONE);
 
-        if(false)
-            SetWindowDisplayAffinity(Window.hWnd, WDA_EXCLUDEFROMCAPTURE);
-        else
-            SetWindowDisplayAffinity(Window.hWnd, WDA_NONE);
-
-        if (ImGui::GetIO().WantCaptureMouse)
-            SetWindowLong(Window.hWnd, GWL_EXSTYLE, GetWindowLong(Window.hWnd, GWL_EXSTYLE) & (~WS_EX_LAYERED));
-        else
-            SetWindowLong(Window.hWnd, GWL_EXSTYLE, GetWindowLong(Window.hWnd, GWL_EXSTYLE) | WS_EX_LAYERED);
-        return true;
-    }
+		if (ImGui::GetIO().WantCaptureMouse)
+			SetWindowLong(Window.hWnd, GWL_EXSTYLE, GetWindowLong(Window.hWnd, GWL_EXSTYLE) & (~WS_EX_TRANSPARENT));
+		else
+			SetWindowLong(Window.hWnd, GWL_EXSTYLE, GetWindowLong(Window.hWnd, GWL_EXSTYLE) | WS_EX_TRANSPARENT);
+		return true;
+	}
 
     LRESULT WINAPI WndProc_External(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     {

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <string>
 
 class Language {
@@ -83,7 +83,7 @@ public:
 	const char* trigger_hotkeyselect[7] = { "MENU", "RBUTTON", "XBUTTON1", "XBUTTON2", "CAPITAL", "SHIFT", "CONTROL" };
 	const char* trigger_onkeyselect[2];
 
-	const char* utilities_langselect[2] = { "English", u8"中文" };
+	const char* utilities_langselect[3] = { "English", "Deutsch", "Turkce" };
 
 	std::string days;
 
@@ -173,88 +173,170 @@ public:
 		this->frames = "Frames";
 	}
 
-	void chineese() {
-		this->tab_visuals = u8"视觉";
-		this->tab_aimbot = u8"自瞄";
-		this->tab_radar = u8"雷达";
-		this->tab_trigger = u8"自动扳机";
-		this->tab_settings = u8"设置";
-		this->tab_config = u8"配置";
+	void german() {
+		this->tab_visuals = "Visuals";
+		this->tab_aimbot = "Aimbot";
+		this->tab_radar = "Radar";
+		this->tab_trigger = "TriggerBot";
+		this->tab_settings = "Einstellungen";
+		this->tab_config = "Config";
 
-		this->visuals_showbox = u8"显示透视框";
-		this->visuals_boxcolor = u8"框颜色";
-		this->visuals_boxtype = u8"框类型";
-		this->visuals_barpos = u8"生命条位置";
-		this->visuals_showbone = u8"显示骨骼";
-		this->visuals_bonecolor = u8"骨骼颜色";
-		this->visuals_showeyeray = u8"显示视线";
-		this->visuals_eyeraycolor = u8"视线颜色";
-		this->visuals_showbar = u8"显示生命条";
-		this->visuals_weaponesp = u8"显示武器";
-		this->visuals_distance = u8"显示距离";
-		this->visuals_name = u8"显示名称";
-		this->visuals_line = u8"显示指向玩家的线";
-		this->visuals_linecolor = u8"线颜色";
+		this->visuals_showbox = "Box Anzeigen";
+		this->visuals_boxcolor = "Box Farbe";
+		this->visuals_boxtype = "Box Typ";
+		this->visuals_barpos = "Lebensbalken Position";
+		this->visuals_showbone = "Knochen";
+		this->visuals_bonecolor = "Knochen Farbe";
+		this->visuals_showeyeray = "Blickrichtung";
+		this->visuals_eyeraycolor = "Blickrichtung Farbe";
+		this->visuals_showbar = "Lebensbalken";
+		this->visuals_weaponesp = "Waffe";
+		this->visuals_distance = "Distanz";
+		this->visuals_name = "Name";
+		this->visuals_line = "Linie zum Spieler";
+		this->visuals_linecolor = "Linie Farbe";
 
-		this->aimbot_enable = u8"启用";
-		this->aimbot_hotkey = u8"自瞄热键";
-		this->aimbot_fov = u8"自瞄范围";
-		this->aimbot_showaimfov = u8"显示自瞄范围";
-		this->aimbot_aimfovcolor = u8"自瞄范围颜色";
-		this->aimbot_smooth = u8"平滑度";
-		this->aimbot_recolcontrol = u8"后坐力控制";
+		this->aimbot_enable = "Aktivieren";
+		this->aimbot_hotkey = "Aimbot Taste";
+		this->aimbot_fov = "Sichtfeld";
+		this->aimbot_showaimfov = "Zeige Sichtfeld";
+		this->aimbot_aimfovcolor = "Sichtfeld Farbe";
+		this->aimbot_smooth = "Glatt";
+		this->aimbot_recolcontrol = "Ruckstosskontrolle";
 
-		this->aimbot_posdef = u8"瞄准目标 / 默认";
-		this->aimbot_pospis = u8"瞄准目标 / 手枪";
-		this->aimbot_possn = u8"瞄准目标 / 狙击";
-		this->aimbot_posrifles = u8"瞄准目标 / 步枪";
-		this->aimbot_posshotguns = u8"瞄准目标 / 霰弹枪";
+		this->aimbot_posdef = "Ziel Position / Standard";
+		this->aimbot_pospis = "Ziel Position / Pistolen";
+		this->aimbot_possn = "Ziel Position / Scharfschutzen";
+		this->aimbot_posrifles = "Ziel Position / Sturmgewehre";
+		this->aimbot_posshotguns = "Ziel Position / Schrotflinten";
 
-		this->aimbot_autoshot = u8"自动射击";
-		this->aimbot_visiblecheck = u8"可见性检查";
-		this->aimbot_ignoreonshot = u8"忽略开火";
-		this->aimbot_customweapon = u8"自定义设置";
-		this->aimbot_customsmooth = u8"顺滑度";
+		this->aimbot_pistols = "Pistolen";
+		this->aimbot_rifles = "Sturmgewehre";
+		this->aimbot_snipers = "Scharfschutzen";
+		this->aimbot_shotguns = "Schrotflinten";
+		this->aimbot_other = "Andere";
 
-		this->aimbot_pistols = u8"手枪";
-		this->aimbot_rifles = u8"步枪";
-		this->aimbot_snipers = u8"狙击枪";
-		this->aimbot_shotguns = u8"霰弹枪";
-		this->aimbot_other = u8"全局";
+		this->aimbot_autoshot = "Auto-Schuss";
+		this->aimbot_visiblecheck = "Sichtbarkeitsprufung";
+		this->aimbot_ignoreonshot = "Ignorieren bei Schuss";
+		this->aimbot_customweapon = "Eigene Waffen Einstellungen";
+		this->aimbot_customsmooth = "Waffen Glatt";
 
-		this->radar_showradar = u8"显示雷达";
-		this->radar_enableweb = u8"启用网络雷达";
-		this->radar_radarsize = u8"雷达大小";
-		this->radar_euserver = u8"网页/欧洲服务器";
+		this->radar_showradar = "Radar Anzeigen";
+		this->radar_enableweb = "Web-Radar Aktivieren";
+		this->radar_radarsize = "Radar Grosse";
+		this->radar_euserver = "Web / EU Server";
 
+		this->trigger_enable = "Aktivieren";
+		this->trigger_hotkey = "Trigger Taste";
+		this->trigger_mode = "Trigger Modus";
+		this->trigger_delay = "Verzogerung";
 
-		this->trigger_enable = u8"自动扳机启用";
-		this->trigger_hotkey = u8"自动扳机热键";
-		this->trigger_mode = u8"自动扳机模式";
-		this->trigger_delay = u8"延迟";
+		this->utilities_teamcheck = "Team Uberprufen";
+		this->utilities_closehack = "Software Schliessen";
+		this->utilities_reloadhack = "Spiel neu laden";
+		this->utilities_language = "Sprache Auswahlen";
 
-		this->utilities_teamcheck = u8"队伍检查";
-		this->utilities_closehack = u8"关闭软件";
-		this->utilities_language = u8"选择语言";
-		this->utilities_reloadhack = u8"重新获取数据";
+		this->config_newconfig = "Config Name";
+		this->config_create = "Config Erstellen";
+		this->config_load = "Laden";
+		this->config_save = "Speichern";
+		this->config_delete = "Loschen";
 
-		this->config_newconfig = u8"配置名称";
-		this->config_create = u8"创建配置";
-		this->config_load = u8"加载";
-		this->config_save = u8"保存";
-		this->config_delete = u8"删除";
+		this->visuals_boxtypeselect[0] = "Normal"; this->visuals_boxtypeselect[1] = "Dunn";
+		this->visuals_heathbarselect[0] = "Links"; this->visuals_heathbarselect[1] = "Oben";
 
-		this->visuals_boxtypeselect[0] = u8"普通"; this->visuals_boxtypeselect[1] = u8"窄";
-		this->visuals_heathbarselect[0] = u8"左侧"; this->visuals_heathbarselect[1] = u8"上侧";
+		this->aimbot_posselect[0] = "Kopf"; this->aimbot_posselect[1] = "Hals"; this->aimbot_posselect[2] = "Bauch";
+		this->radar_sizeselect[0] = "Klein"; this->radar_sizeselect[1] = "Gross";
 
-		this->aimbot_posselect[0] = u8"头"; this->aimbot_posselect[1] = u8"脖子"; this->aimbot_posselect[2] = u8"胸";
-		this->radar_sizeselect[0] = u8"小的"; this->radar_sizeselect[1] = u8"大的";
+		this->trigger_onkeyselect[0] = "Auf Taste"; this->trigger_onkeyselect[1] = "Immer";
 
-		this->trigger_onkeyselect[0] = u8"当按下时"; this->trigger_onkeyselect[1] = u8"总是";
+		this->days = "Tage";
 
-		this->days = u8"剩余天数";
+		this->frames = "Bilder";
+	}
 
-		this->frames = u8"框";
+	void turkish() {
+		this->tab_visuals = "Gorseller";
+		this->tab_aimbot = "Aimbot";
+		this->tab_radar = "Radar";
+		this->tab_trigger = "Tetikleyici";
+		this->tab_settings = "Ayarlar";
+		this->tab_config = "Yapilandirma";
+
+		this->visuals_showbox = "Kutu Goster";
+		this->visuals_boxcolor = "Kutu Rengi";
+		this->visuals_boxtype = "Kutu Tipi";
+		this->visuals_barpos = "Can Cubugu Pozisyonu";
+		this->visuals_showbone = "Kemikler";
+		this->visuals_bonecolor = "Kemik Rengi";
+		this->visuals_showeyeray = "Bakis Yonu";
+		this->visuals_eyeraycolor = "Bakis Yonu Rengi";
+		this->visuals_showbar = "Can Cubugu";
+		this->visuals_weaponesp = "Silah";
+		this->visuals_distance = "Mesafe";
+		this->visuals_name = "Isim";
+		this->visuals_line = "Oyuncuya Cizgi";
+		this->visuals_linecolor = "Cizgi Rengi";
+
+		this->aimbot_enable = "Etkinlestir";
+		this->aimbot_hotkey = "Aimbot Tusu";
+		this->aimbot_fov = "Gorus Alani";
+		this->aimbot_showaimfov = "Gorus Alanini Goster";
+		this->aimbot_aimfovcolor = "Gorus Alani Rengi";
+		this->aimbot_smooth = "Yumusatma";
+		this->aimbot_recolcontrol = "Tepme Kontrolu";
+
+		this->aimbot_posdef = "Nisan Noktasi / Varsayilan";
+		this->aimbot_pospis = "Nisan Noktasi / Tabancalar";
+		this->aimbot_possn = "Nisan Noktasi / Keskin Nisancilar";
+		this->aimbot_posrifles = "Nisan Noktasi / Tufekler";
+		this->aimbot_posshotguns = "Nisan Noktasi / Pompali";
+
+		this->aimbot_pistols = "Tabancalar";
+		this->aimbot_rifles = "Tufekler";
+		this->aimbot_snipers = "Keskin Nisancilar";
+		this->aimbot_shotguns = "Pompali Tufekler";
+		this->aimbot_other = "Diger";
+
+		this->aimbot_autoshot = "Otomatik Atis";
+		this->aimbot_visiblecheck = "Gorunurluk Kontrolu";
+		this->aimbot_ignoreonshot = "Atis Sirasinda Yoksay";
+		this->aimbot_customweapon = "Ozel Silah Ayarlari";
+		this->aimbot_customsmooth = "Silah Yumusatma";
+
+		this->radar_showradar = "Radar Goster";
+		this->radar_enableweb = "Web Radarini Etkinlestir";
+		this->radar_radarsize = "Radar Boyutu";
+		this->radar_euserver = "Web / EU Sunucu";
+
+		this->trigger_enable = "Etkinlestir";
+		this->trigger_hotkey = "Tetikleyici Tus";
+		this->trigger_mode = "Tetikleyici Modu";
+		this->trigger_delay = "Gecikme";
+
+		this->utilities_teamcheck = "Takim Kontrolu";
+		this->utilities_closehack = "Yazilimi Kapat";
+		this->utilities_reloadhack = "Oyunu Yenile";
+		this->utilities_language = "Dil Secimi";
+
+		this->config_newconfig = "Yapilandirma Ismi";
+		this->config_create = "Yapilandirma Olustur";
+		this->config_load = "Yukle";
+		this->config_save = "Kaydet";
+		this->config_delete = "Sil";
+
+		this->visuals_boxtypeselect[0] = "Normal"; this->visuals_boxtypeselect[1] = "Ince";
+		this->visuals_heathbarselect[0] = "Sol"; this->visuals_heathbarselect[1] = "Ust";
+
+		this->aimbot_posselect[0] = "Kafa"; this->aimbot_posselect[1] = "Boyun"; this->aimbot_posselect[2] = "Gogus";
+		this->radar_sizeselect[0] = "Kucuk"; this->radar_sizeselect[1] = "Buyuk";
+
+		this->trigger_onkeyselect[0] = "Tusa Basilinca"; this->trigger_onkeyselect[1] = "Her Zaman";
+
+		this->days = "Gunler";
+
+		this->frames = "Kareler";
 	}
 };
 

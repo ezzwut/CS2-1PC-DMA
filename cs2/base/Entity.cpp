@@ -160,7 +160,9 @@ bool PlayerController::GetPlayerName()
 
 bool PlayerController::GetArmor()
 {
-	return GetDataAddressWithOffset<int>(Address, Offset::Armor, this->Armor);
+	if (!GetDataAddressWithOffset<int>(Address, Offset::Armor, this->Armor))
+		this->Armor = 0;
+	return true;
 }
 
 bool PlayerController::GetMoney()
@@ -187,41 +189,48 @@ bool PlayerPawn::GetSpotted()
 
 bool PlayerPawn::GetWeaponName()
 {
+	this->WeaponName = "Unknown";
 	try {
-		DWORD64 WeaponNameAddress = 0;
+		DWORD64 WeaponServices = 0;
+		if (!ProcessMgr.ReadMemory(this->Address + Offset::WeaponServices, WeaponServices) || WeaponServices == 0)
+			return true;
+
+		DWORD ActiveWeaponHandle = 0;
+		if (!ProcessMgr.ReadMemory(WeaponServices + Offset::ActiveWeapon, ActiveWeaponHandle) || ActiveWeaponHandle == 0xFFFFFFFF)
+			return true;
+
+		DWORD ActiveWeaponIndex = ActiveWeaponHandle & 0x7FFF;
+		DWORD64 EntityListEntry = 0;
+		if (!ProcessMgr.ReadMemory(gGame.GetEntityListAddress() + 8 * (ActiveWeaponIndex >> 9) + 0x10, EntityListEntry) || EntityListEntry == 0)
+			return true;
+
+		DWORD64 BaseWeapon = 0;
+		if (!ProcessMgr.ReadMemory(EntityListEntry + 120 * (ActiveWeaponIndex & 0x1FF), BaseWeapon) || BaseWeapon == 0)
+			return true;
+
+		DWORD64 VData = 0;
+		if (!ProcessMgr.ReadMemory(BaseWeapon + Offset::pEntity, VData) || VData == 0)
+			return true;
+
+		DWORD64 szNamePtr = 0;
+		if (!ProcessMgr.ReadMemory(VData + Offset::designerName, szNamePtr) || szNamePtr == 0)
+			return true;
+
 		char Buffer[MAX_PATH]{};
-		WeaponNameAddress = ProcessMgr.TraceAddress(this->Address + Offset::pClippingWeapon, { 0x10, 0x20 ,0x0 });
-		if (WeaponNameAddress == 0) {
-#ifdef DEBUG_PRINTS
-			std::cout << "GetWeaponName Error-1" << std::endl;
-#endif // DEBUG_PRINTS
-			return false;
+		if (!ProcessMgr.ReadMemory(szNamePtr, Buffer, MAX_PATH))
+			return true;
+			
+		std::string weaponName = std::string(Buffer);
+		size_t prefixPos = weaponName.find("weapon_");
+		if (prefixPos != std::string::npos) {
+			weaponName = weaponName.substr(prefixPos + 7);
 		}
+		this->WeaponName = weaponName;
 
-
-		if (!ProcessMgr.ReadMemory(WeaponNameAddress, Buffer, MAX_PATH)) {
-			return false;
-		}
-
-		if (!memchr(Buffer, 0, MAX_PATH) || strlen(Buffer) == 0) {
-			WeaponName = "Weapon_None";
-		}
-		else {
-			WeaponName = std::string(Buffer);
-			std::size_t Index = WeaponName.find("_");
-			if (Index == std::string::npos || WeaponName.empty())
-			{
-				WeaponName = "Weapon_None";
-			}
-			else
-			{
-				WeaponName = WeaponName.substr(Index + 1, WeaponName.size() - Index - 1);
-			}
-		}
 		return true;
 	}
 	catch (const std::exception& ex) {
-		//std::cout << ex.what() << std::endl;
+		return true;
 	}
 }
 

@@ -32,10 +32,15 @@ bool Offset::UpdateOffsets(std::string offsetdata, std::string clientdata)
 	Offset::CurrentHealth = client["client.dll"]["classes"]["C_BaseEntity"]["fields"]["m_iHealth"].GetUint64();
 	Offset::GameSceneNode = client["client.dll"]["classes"]["C_BaseEntity"]["fields"]["m_pGameSceneNode"].GetUint64();
 	Offset::BoneArray = client["client.dll"]["classes"]["CSkeletonInstance"]["fields"]["m_modelState"].GetUint64() + 0x80;
-	Offset::MapName = offsets["matchmaking.dll"]["dwGameTypes_mapName"].GetUint64();	// ERROR
+	// MapName is broken and unused
 	Offset::angEyeAngles = client["client.dll"]["classes"]["C_CSPlayerPawn"]["fields"]["m_angEyeAngles"].GetUint64();
 	Offset::vecLastClipCameraPos = client["client.dll"]["classes"]["C_CSPlayerPawn"]["fields"]["m_vecLastClipCameraPos"].GetUint64();
-	Offset::pClippingWeapon = client["client.dll"]["classes"]["C_CSPlayerPawn"]["fields"]["m_pClippingWeapon"].GetUint64(); // ERROR
+	Offset::WeaponServices = client["client.dll"]["classes"]["C_BasePlayerPawn"]["fields"]["m_pWeaponServices"].GetUint64();
+	Offset::ActiveWeapon = client["client.dll"]["classes"]["CPlayer_WeaponServices"]["fields"]["m_hActiveWeapon"].GetUint64();
+	Offset::pEntity = client["client.dll"]["classes"]["CEntityInstance"]["fields"]["m_pEntity"].GetUint64();
+	if (Offset::pEntity == 0) Offset::pEntity = 0x10;
+	Offset::designerName = client["client.dll"]["classes"]["CEntityIdentity"]["fields"]["m_designerName"].GetUint64();
+	if (Offset::designerName == 0) Offset::designerName = 0x20;
 	Offset::iShotsFired = client["client.dll"]["classes"]["C_CSPlayerPawn"]["fields"]["m_iShotsFired"].GetUint64();
 	Offset::flFlashDuration = client["client.dll"]["classes"]["C_CSPlayerPawnBase"]["fields"]["m_flFlashDuration"].GetUint64();
 	Offset::aimPunchAngle = client["client.dll"]["classes"]["C_CSPlayerPawn"]["fields"]["m_aimPunchAngle"].GetUint64();
