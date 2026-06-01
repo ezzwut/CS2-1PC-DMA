@@ -8,20 +8,6 @@
 
 namespace Render
 {
-	void DrawFovCircle(const CEntity& LocalEntity, int type)
-	{ // 0 - default, 1 - rifles, 2 - snipers, 3 - pistols, 4 - shotguns
-		float tempsmooth = AimControl::AimFov;
-		if (type == 1) tempsmooth = AimControl::AimFovRifles;
-		else if (type == 2) tempsmooth = AimControl::AimFovSnipers;
-		else if (type == 3) tempsmooth = AimControl::AimFovPistols;
-		else if (type == 4) tempsmooth = AimControl::AimFovShotguns;
-
-		Vec2 CenterPoint = Gui.Window.Size / 2;
-		float Radius = tan(tempsmooth / 180.f * M_PI / 2.f) / tan(LocalEntity.Pawn.Fov / 180.f * M_PI / 2.f) * Gui.Window.Size.x;
-		Gui.Circle(CenterPoint, Radius, MenuConfig::AimFovRangeColor, 1);
-	}
-
-
 	void LineToEnemy(ImVec4 Rect, ImColor Color, float Thickness)
 	{
 		Gui.Line({ Rect.x + Rect.z / 2,Rect.y }, { Gui.Window.Size.x / 2,0 }, Color, Thickness);
@@ -58,6 +44,9 @@ namespace Render
 
 	ImVec4 Get2DBox(const CEntity& Entity)
 	{
+		if (Entity.GetBone().BonePosList.size() <= BONEINDEX::head) {
+			return ImVec4{ 0,0,0,0 };
+		}
 		BoneJointPos Head = Entity.GetBone().BonePosList[BONEINDEX::head];
 		Vec2 Size, Pos;
 		Size.y = (Entity.Pawn.ScreenPos.y - Head.ScreenPos.y) * 1.09;
@@ -76,6 +65,8 @@ namespace Render
 			Previous.Pos = Vec3(0, 0, 0);
 			for (auto Index : i)
 			{
+				if (Entity.GetBone().BonePosList.size() <= Index)
+					continue;
 				Current = Entity.GetBone().BonePosList[Index];
 				if (Previous.Pos == Vec3(0, 0, 0))
 				{
@@ -93,6 +84,9 @@ namespace Render
 
 	void ShowLosLine(const CEntity& Entity, const float Length, ImColor Color, float Thickness)
 	{
+		if (Entity.GetBone().BonePosList.size() <= BONEINDEX::head) {
+			return;
+		}
 		Vec2 StartPoint, EndPoint;
 		Vec3 Temp;
 		BoneJointPos Head = Entity.GetBone().BonePosList[BONEINDEX::head];
@@ -113,6 +107,9 @@ namespace Render
 
 	ImVec4 Get2DBoneRect(const CEntity& Entity)
 	{
+		if (Entity.GetBone().BonePosList.empty()) {
+			return ImVec4{ 0,0,0,0 };
+		}
 		Vec2 Min, Max, Size;
 		Min = Max = Entity.GetBone().BonePosList[0].ScreenPos;
 
@@ -160,11 +157,11 @@ namespace Render
 	private:
 		ImColor Mix(ImColor Col_1, ImColor Col_2, float t);
 
-		ImColor FirstStageColor = ImColor(96, 246, 113, 220);
+		ImColor FirstStageColor = ImColor(77, 160, 87, 255);
 
-		ImColor SecondStageColor = ImColor(247, 214, 103, 220);
+		ImColor SecondStageColor = ImColor(77, 160, 87, 255);
 
-		ImColor ThirdStageColor = ImColor(255, 95, 95, 220);
+		ImColor ThirdStageColor = ImColor(77, 160, 87, 255);
 
 		ImColor BackupHealthColor = ImColor(255, 255, 255, 220);
 
@@ -197,7 +194,7 @@ namespace Render
 
 		DrawList->AddRectFilled(RectPos,
 			{ RectPos.x + RectSize.x,RectPos.y + RectSize.y },
-			BackGroundColor, 5, 15);
+			BackGroundColor, 0.0f);
 
 
 		float Color_Lerp_t = pow(Proportion, 2.5);
@@ -241,19 +238,19 @@ namespace Render
 
 				DrawList->AddRectFilled(RectPos,
 					{ RectPos.x + BackupHealthWidth,RectPos.y + RectSize.y },
-					BackupHealthColorTemp, 5);
+					BackupHealthColorTemp, 0.0f);
 			}
 		}
 
 
 		DrawList->AddRectFilled(RectPos,
 			{ RectPos.x + Width,RectPos.y + RectSize.y },
-			Color, 5);
+			Color, 0.0f);
 
 
 		DrawList->AddRect(RectPos,
 			{ RectPos.x + RectSize.x,RectPos.y + RectSize.y },
-			FrameColor, 5, 15, 1);
+			FrameColor, 0.0f, 0, 1.0f);
 	}
 
 	void HealthBar::DrawHealthBar_Vertical(float MaxHealth, float CurrentHealth, ImVec2 Pos, ImVec2 Size)
@@ -279,7 +276,7 @@ namespace Render
 
 		DrawList->AddRectFilled(RectPos,
 			{ RectPos.x + RectSize.x,RectPos.y + RectSize.y },
-			BackGroundColor, 5, 15);
+			BackGroundColor, 0.0f);
 
 		float Color_Lerp_t = pow(Proportion, 2.5);
 		if (InRange(Proportion, 0.5, 1))
@@ -317,17 +314,17 @@ namespace Render
 				BackupHealthHeight -= BackupHealthHeight_Lerp;
 				DrawList->AddRectFilled({ RectPos.x,RectPos.y + RectSize.y - BackupHealthHeight },
 					{ RectPos.x + RectSize.x,RectPos.y + RectSize.y },
-					BackupHealthColorTemp, 5);
+					BackupHealthColorTemp, 0.0f);
 			}
 		}
 
 		DrawList->AddRectFilled({ RectPos.x,RectPos.y + RectSize.y - Height },
 			{ RectPos.x + RectSize.x,RectPos.y + RectSize.y },
-			Color, 5);
+			Color, 0.0f);
 
 		DrawList->AddRect(RectPos,
 			{ RectPos.x + RectSize.x,RectPos.y + RectSize.y },
-			FrameColor, 5, 15, 1);
+			FrameColor, 0.0f, 0, 1.0f);
 	}
 
 	ImColor HealthBar::Mix(ImColor Col_1, ImColor Col_2, float t)
@@ -353,6 +350,32 @@ namespace Render
 				HealthBarMap[Sign].DrawHealthBar_Horizontal(MaxHealth, CurrentHealth, Pos, Size);
 			else
 				HealthBarMap[Sign].DrawHealthBar_Vertical(MaxHealth, CurrentHealth, Pos, Size);
+		}
+	}
+
+	void DrawArmorBar(float MaxArmor, float CurrentArmor, ImVec2 Pos, ImVec2 Size, bool Horizontal)
+	{
+		ImDrawList* DrawList = ImGui::GetBackgroundDrawList();
+		float Proportion = CurrentArmor / MaxArmor;
+		if (Proportion > 1.f) Proportion = 1.f;
+		if (Proportion < 0.f) Proportion = 0.f;
+
+		ImColor BackGroundColor = ImColor(90, 90, 90, 220);
+		ImColor ArmorColor = ImColor(52, 106, 149, 255);
+		ImColor FrameColor = ImColor(45, 45, 45, 220);
+
+		if (Horizontal) {
+			float Width = Size.x * Proportion;
+			DrawList->AddRectFilled(Pos, { Pos.x + Size.x, Pos.y + Size.y }, BackGroundColor, 0.0f);
+			if (Width > 0)
+				DrawList->AddRectFilled(Pos, { Pos.x + Width, Pos.y + Size.y }, ArmorColor, 0.0f);
+			DrawList->AddRect(Pos, { Pos.x + Size.x, Pos.y + Size.y }, FrameColor, 0.0f, 0, 1.0f);
+		} else {
+			float Height = Size.y * Proportion;
+			DrawList->AddRectFilled(Pos, { Pos.x + Size.x, Pos.y + Size.y }, BackGroundColor, 0.0f);
+			if (Height > 0)
+				DrawList->AddRectFilled({ Pos.x, Pos.y + Size.y - Height }, { Pos.x + Size.x, Pos.y + Size.y }, ArmorColor, 0.0f);
+			DrawList->AddRect(Pos, { Pos.x + Size.x, Pos.y + Size.y }, FrameColor, 0.0f, 0, 1.0f);
 		}
 	}
 

@@ -28,10 +28,12 @@ namespace Offset
 	inline DWORD Armor;
 	inline DWORD GameSceneNode;
 	inline DWORD BoneArray;
-	inline DWORD MapName;
 	inline DWORD angEyeAngles;
 	inline DWORD vecLastClipCameraPos;
-	inline DWORD pClippingWeapon;
+	inline DWORD WeaponServices;
+	inline DWORD ActiveWeapon;
+	inline DWORD pEntity;
+	inline DWORD designerName;
 	inline DWORD iShotsFired;
 	inline DWORD flFlashDuration;
 	inline DWORD aimPunchAngle;

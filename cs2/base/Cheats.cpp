@@ -24,6 +24,12 @@ void Cheats::RadarSetting(Base_Radar& Radar)
 
 void Cheats::Run()
 {
+	HWND hwnd = FindWindowA("SDL_app", "Counter-Strike 2");
+	HWND fg = GetForegroundWindow();
+	if (hwnd && fg != hwnd && fg != Gui.Window.hWnd) {
+		return;
+	}
+
 	try {
 		static std::chrono::time_point LastTimePoint = std::chrono::steady_clock::now();
 		auto CurTimePoint = std::chrono::steady_clock::now();
@@ -39,13 +45,6 @@ void Cheats::Run()
 			Menu();
 
 		static std::map<DWORD64, Render::HealthBar> HealthBarMap;
-
-		float DistanceToSight = 0;
-		float MaxAimDistance = 100000;
-		Vec3  HeadPos{ 0,0,0 };
-		Vec3  AimPos{ 0,0,0 };
-
-		int weaponTypeSmooth = 0; // 0 - default, 1 - rifles, 2 - snipers, 3 - pistols, 4 - shotguns
 
 		Base_Radar Radar;
 
@@ -72,56 +71,17 @@ void Cheats::Run()
 			if (!Entity.IsInScreen()) {
 				continue;
 			}
-			if (Entity.GetBone().BonePosList.size() <= BONEINDEX::head) continue;
-			DistanceToSight = Entity.GetBone().BonePosList[BONEINDEX::head].ScreenPos.DistanceTo({ Gui.Window.Size.x / 2,Gui.Window.Size.y / 2 });
-
-			if (DistanceToSight < MaxAimDistance)
-			{
-				MaxAimDistance = DistanceToSight;
-				// 0 - default, 1 - rifles, 2 - snipers, 3 - pistols, 4 - shotguns
-				if (!MenuConfig::VisibleCheck ||
-					Entity.Pawn.bSpottedByMask & (DWORD64(1) << (LocalEntityPlayer.LocalPlayerControllerIndex)) ||
-					LocalEntityPlayer.Pawn.bSpottedByMask & (DWORD64(1) << (i)))
-				{	// pistols
-					if (std::find(GunList::pistolsList.begin(), GunList::pistolsList.end(), LocalEntityPlayer.Pawn.WeaponName) != GunList::pistolsList.end()) {
-						if (Entity.GetBone().BonePosList.size() <= MenuConfig::AimPositionIndexPistol) continue;
-						AimPos = Entity.GetBone().BonePosList[MenuConfig::AimPositionIndexPistol].Pos;
-						if (MenuConfig::AimPositionIndexPistol == BONEINDEX::head)
-							AimPos.z -= 1.f;
-						weaponTypeSmooth = 3;
-					} // snipers
-					else if (std::find(GunList::snipersList.begin(), GunList::snipersList.end(), LocalEntityPlayer.Pawn.WeaponName) != GunList::snipersList.end()) {
-						if (Entity.GetBone().BonePosList.size() <= MenuConfig::AimPositionIndexSniper) continue;
-						AimPos = Entity.GetBone().BonePosList[MenuConfig::AimPositionIndexSniper].Pos;
-						if (MenuConfig::AimPositionIndexSniper == BONEINDEX::head)
-							AimPos.z -= 1.f;
-						weaponTypeSmooth = 2;
-					} // rifles
-					else if (std::find(GunList::riflesList.begin(), GunList::riflesList.end(), LocalEntityPlayer.Pawn.WeaponName) != GunList::riflesList.end()) {
-						if (Entity.GetBone().BonePosList.size() <= MenuConfig::AimPositionIndexRifles) continue;
-						AimPos = Entity.GetBone().BonePosList[MenuConfig::AimPositionIndexRifles].Pos;
-						if (MenuConfig::AimPositionIndexRifles == BONEINDEX::head)
-							AimPos.z -= 1.f;
-						weaponTypeSmooth = 1;
-					} // shotguns
-					else if (std::find(GunList::shotgunsList.begin(), GunList::shotgunsList.end(), LocalEntityPlayer.Pawn.WeaponName) != GunList::shotgunsList.end()) {
-						if (Entity.GetBone().BonePosList.size() <= MenuConfig::AimPositionIndexShotGuns) continue;
-						AimPos = Entity.GetBone().BonePosList[MenuConfig::AimPositionIndexShotGuns].Pos;
-						if (MenuConfig::AimPositionIndexShotGuns == BONEINDEX::head)
-							AimPos.z -= 1.f;
-						weaponTypeSmooth = 4;
-					} 
-					else { // default
-						if (Entity.GetBone().BonePosList.size() <= MenuConfig::AimPositionIndex) continue;
-						AimPos = Entity.GetBone().BonePosList[MenuConfig::AimPositionIndex].Pos;
-						if (MenuConfig::AimPositionIndex == BONEINDEX::head)
-							AimPos.z -= 1.f;
-					}
-				}
-			}
 
 			if (MenuConfig::ShowBoneESP)
 				Render::DrawBone(Entity, MenuConfig::BoneColor, 1.3);
+
+			if (MenuConfig::ShowHeadESP)
+			{
+				if (Entity.GetBone().BonePosList.size() > BONEINDEX::head) {
+					Vec2 HeadPos = Entity.GetBone().BonePosList[BONEINDEX::head].ScreenPos;
+					Gui.CircleFilled(HeadPos, 4.0f, MenuConfig::HeadESPColor, 0);
+				}
+			}
 
 			if (MenuConfig::ShowEyeRay)
 				Render::ShowLosLine(Entity, 50, MenuConfig::EyeRayColor, 1.3);
@@ -148,21 +108,37 @@ void Cheats::Run()
 			if (MenuConfig::ShowHealthBar)
 			{
 				ImVec2 HealthBarPos, HealthBarSize;
-				if (MenuConfig::HealthBarType == 0)
+				if (MenuConfig::HealthBarType == 0) // vertical
 				{
-					HealthBarPos = { Rect.x - 7.f,Rect.y };
-					HealthBarSize = { 7 ,Rect.w };
+					HealthBarPos = { Rect.x - 4.f,Rect.y };
+					HealthBarSize = { 3 ,Rect.w };
 				}
-				else
+				else // horizontal
 				{
 					HealthBarPos = { Rect.x + Rect.z / 2 - 70 / 2,Rect.y - 13 };
-					HealthBarSize = { 70,8 };
+					HealthBarSize = { 70, 4 };
 				}
 				Render::DrawHealthBar(Entity.Controller.Address, 100, Entity.Pawn.Health, HealthBarPos, HealthBarSize, MenuConfig::HealthBarType);
 			}
 
+			if (MenuConfig::ShowArmorBar)
+			{
+				ImVec2 ArmorBarPos, ArmorBarSize;
+				if (MenuConfig::HealthBarType == 0) // vertical
+				{
+					ArmorBarPos = { Rect.x + Rect.z + 1.f, Rect.y };
+					ArmorBarSize = { 3, Rect.w };
+				}
+				else // horizontal
+				{
+					ArmorBarPos = { Rect.x + Rect.z / 2 - 70 / 2, Rect.y - 10 };
+					ArmorBarSize = { 70, 4 };
+				}
+				Render::DrawArmorBar(100.f, Entity.Controller.Armor, ArmorBarPos, ArmorBarSize, MenuConfig::HealthBarType);
+			}
+
 			if (MenuConfig::ShowWeaponESP)
-				Gui.StrokeText(Entity.Pawn.WeaponName, { Rect.x,Rect.y + Rect.w }, ImColor(255, 255, 255, 255), 14);
+				Gui.StrokeText(Entity.Pawn.WeaponName, { Rect.x + Rect.z / 2,Rect.y + Rect.w }, ImColor(255, 255, 255, 255), 14, true);
 
 			if (MenuConfig::ShowDistance)
 				Render::DrawDistance(LocalEntityPlayer, Entity, Rect);
@@ -185,43 +161,7 @@ void Cheats::Run()
 			ImGui::End();
 		}
 
-		if (MenuConfig::TriggerMode == 0 && MenuConfig::TriggerBot && Keys::TriggerKey)
-		{
-			MenuConfig::Shoot = true;
-			TriggerBot::Run(LocalEntityPlayer);
-			MenuConfig::Shoot = false;
-		}
-
-		else if (MenuConfig::TriggerMode == 1 && MenuConfig::TriggerBot)
-		{
-			MenuConfig::Shoot = true;
-			TriggerBot::Run(LocalEntityPlayer);
-			MenuConfig::Shoot = false;
-		}
-
-		if (std::find(GunList::pistolsList.begin(), GunList::pistolsList.end(), LocalEntityPlayer.Pawn.WeaponName) != GunList::pistolsList.end()) {
-			weaponTypeSmooth = 3;
-		} // snipers
-		else if (std::find(GunList::snipersList.begin(), GunList::snipersList.end(), LocalEntityPlayer.Pawn.WeaponName) != GunList::snipersList.end()) {
-			weaponTypeSmooth = 2;
-		} // rifles
-		else if (std::find(GunList::riflesList.begin(), GunList::riflesList.end(), LocalEntityPlayer.Pawn.WeaponName) != GunList::riflesList.end()) {
-			weaponTypeSmooth = 1;
-		} // shotguns
-		else if (std::find(GunList::shotgunsList.begin(), GunList::shotgunsList.end(), LocalEntityPlayer.Pawn.WeaponName) != GunList::shotgunsList.end()) {
-			weaponTypeSmooth = 4;
-		}
-
-		if (MenuConfig::ShowAimFovRange)
-			Render::DrawFovCircle(LocalEntityPlayer, weaponTypeSmooth);
-
-		if (MenuConfig::AimBot && Keys::AimKey)
-		{
-			if (AimPos != Vec3(0, 0, 0))
-			{
-				AimControl::AimBot(LocalEntityPlayer, LocalEntityPlayer.Pawn.CameraPos, AimPos, weaponTypeSmooth);
-			}
-		}
+		// Visuals only
 	}
 	catch (std::exception const& e)
 	{

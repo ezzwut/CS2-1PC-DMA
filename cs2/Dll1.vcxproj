@@ -157,7 +157,6 @@
     <ClCompile Include="base\Game.cpp" />
     <ClCompile Include="base\GlobalVars.cpp" />
     <ClCompile Include="base\Offsets.cpp" />
-    <ClCompile Include="base\TriggerBot.cpp" />
     <ClCompile Include="CheatsThread.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="kmbox\KmboxB.cpp" />
@@ -192,7 +191,6 @@
     <ClInclude Include="base\MenuConfig.hpp" />
     <ClInclude Include="base\Offsets.h" />
     <ClInclude Include="base\Render.hpp" />
-    <ClInclude Include="base\TriggerBot.h" />
     <ClInclude Include="base\View.hpp" />
     <ClInclude Include="CheatsThread.h" />
     <ClInclude Include="CustomFont.h" />

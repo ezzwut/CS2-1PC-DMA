@@ -1,8 +1,8 @@
 # CS2 DMA Cheat
 
-Open source CS2 DMA Software. I m the author of most popular open source dma cheat (now its fork has 160+ stars.). Its 2.0 version with all fixed bugs, new features, all types of kmbox support.
+Premium CS2 DMA Software. Optimized with bug fixes, new features, and comprehensive Kmbox support.
 
-In ReadMe you can find full installation & build guide. If you have any questions - you can ask them in contacts.
+In this ReadMe you can find the full installation & build guide.
 
 ![C++](https://img.shields.io/badge/C%2B%2B-23-blue.svg)
 ![Visual Studio](https://img.shields.io/badge/IDE-Visual%20Studio-5C2D91?logo=visual-studio&logoColor=white)
@@ -28,7 +28,7 @@ You need to put files in same
 ## 🔨 Building
 
 ```bash
-  git clone https://github.com/IvanAcoola/CS2-DMA-Software.git
+  git clone https://github.com/YourBrand/CS2-DMA-Software.git
 ```
 
 Open the project (slnx file) with visual studio (builded with VS2026). 
@@ -95,16 +95,7 @@ F8 on your main keyboard. All binds works only on main computer.
 
 Check one more time installation guide. Do not forget to put needed dlls to same folder as .exe.
 
-#### How can I support the project or say "thank you" to author?
 
-Contact me on telegram
-
-
-
-## ✉️ Contacts
-
- - [Telegram](https://t.me/cherepoveciv) - support on 🇺🇸 🇷🇺 🇮🇱
- - [GitHub](https://github.com/IvanAcoola)
 
 
 ## 🤝 Credits

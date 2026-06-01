@@ -95,7 +95,7 @@ bool CGame::SetForceJump(int value)
 
 uint64_t cbSize = 0x80000;
 
-VOID cbAddFile(_Inout_ HANDLE h, _In_ LPSTR uszName, _In_ ULONG64 cb, _In_opt_ PVMMDLL_VFS_FILELIST_EXINFO pExInfo)
+VOID cbAddFile(_Inout_ HANDLE h, _In_ LPCSTR uszName, _In_ ULONG64 cb, _In_opt_ PVMMDLL_VFS_FILELIST_EXINFO pExInfo)
 {
 	if (strcmp(uszName, "dtb.txt") == 0)
 		cbSize = cb;
@@ -104,7 +104,7 @@ DWORD64 GetProcessModuleHandle(VMM_HANDLE HANDLE, DWORD ProcessID, std::string M
 
 {
 	PVMMDLL_MAP_MODULEENTRY module_entry;
-	bool result = VMMDLL_Map_GetModuleFromNameU(HANDLE, ProcessID, (LPSTR)ModuleName.c_str(), &module_entry, NULL);
+	bool result = VMMDLL_Map_GetModuleFromNameU(HANDLE, ProcessID, (LPCSTR)ModuleName.c_str(), &module_entry, NULL);
 	if (result) {
 		return module_entry->vaBase;
 	}
@@ -166,7 +166,7 @@ DWORD64 GetProcessModuleHandle(VMM_HANDLE HANDLE, DWORD ProcessID, std::string M
 	{
 		auto dtb = possible_dtbs[i];
 		VMMDLL_ConfigSet(HANDLE, VMMDLL_OPT_PROCESS_DTB, dtb);
-		result = VMMDLL_Map_GetModuleFromNameU(HANDLE, ProcessID, (LPSTR)ModuleName.c_str(), &module_entry, NULL);
+		result = VMMDLL_Map_GetModuleFromNameU(HANDLE, ProcessID, (LPCSTR)ModuleName.c_str(), &module_entry, NULL);
 		if (result)
 		{
 			return module_entry->vaBase;
