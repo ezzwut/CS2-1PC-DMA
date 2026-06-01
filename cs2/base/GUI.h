@@ -103,7 +103,7 @@ void Cheats::Menu()
 			{
 				ImGui::SetWindowFontScale(0.9f);
 				ImColor textColor = MenuConfig::DarkMode ? ImColor(255, 255, 255) : ImColor(0, 0, 0);
-				ImGui::GetWindowDrawList()->AddText(ImVec2(ImGui::GetWindowPos().x + 5, ImGui::GetWindowPos().y + 15), textColor, "Premium CS2 Cheat");
+				ImGui::GetWindowDrawList()->AddText(ImVec2(ImGui::GetWindowPos().x + 5, ImGui::GetWindowPos().y + 15), textColor, "github.com/ezzwut");
 				ImGui::SetWindowFontScale(1.0f);
 			}
 			ImGui::EndChild();
