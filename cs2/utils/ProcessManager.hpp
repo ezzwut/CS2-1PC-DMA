@@ -401,20 +401,35 @@ public:
 
 		this->win_logon_pid = GetProcID_Keys((LPSTR)"winlogon.exe");
 
-		if (Winver > 22000) {
+		if (Winver >= 22000) {
 			auto pids = GetPidListFromName("csrss.exe");
 			for (size_t i = 0; i < pids.size(); i++)
 			{
 				auto pid = pids[i];
 				uintptr_t tmp = VMMDLL_ProcessGetModuleBaseU(this->HANDLE, pid, const_cast<LPSTR>("win32ksgd.sys"));
+				if (!tmp) continue;
 				uintptr_t g_session_global_slots = tmp + 0x3110;
 				uintptr_t user_session_state = ReadMemoryExtra<uintptr_t>(ReadMemoryExtra<uintptr_t>(ReadMemoryExtra<uintptr_t>(g_session_global_slots, pid), pid), pid);
 				gafAsyncKeyStateExport = user_session_state + 0x3690;
 				if (gafAsyncKeyStateExport > 0x7FFFFFFFFFFF)
 					break;
 			}
-			if (!(gafAsyncKeyStateExport > 0x7FFFFFFFFFFF))
-				std::cout << "[ WG ] Error: Keys-1" << std::endl;
+			if (!(gafAsyncKeyStateExport > 0x7FFFFFFFFFFF)) {
+				// Fallback for newer win11 builds (e.g. 22621/22631+)
+				for (size_t i = 0; i < pids.size(); i++)
+				{
+					auto pid = pids[i];
+					uintptr_t tmp = VMMDLL_ProcessGetModuleBaseU(this->HANDLE, pid, const_cast<LPSTR>("win32ksgd.sys"));
+					if (!tmp) continue;
+					uintptr_t g_session_global_slots = tmp + 0x3110;
+					uintptr_t user_session_state = ReadMemoryExtra<uintptr_t>(ReadMemoryExtra<uintptr_t>(ReadMemoryExtra<uintptr_t>(g_session_global_slots, pid), pid), pid);
+					gafAsyncKeyStateExport = user_session_state + 0x3690;
+					if (gafAsyncKeyStateExport > 0x7FFFFFFFFFFF)
+						break;
+				}
+				if (!(gafAsyncKeyStateExport > 0x7FFFFFFFFFFF))
+					std::cout << "[ WG ] Error: Keys-1 (Failed to locate gafAsyncKeyState)" << std::endl;
+			}
 		} else {
 			PVMMDLL_MAP_EAT eat_map = NULL;
 			PVMMDLL_MAP_EATENTRY eat_map_entry;

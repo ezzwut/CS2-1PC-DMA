@@ -9,8 +9,22 @@ using namespace rapidjson;
 bool Offset::UpdateOffsets(std::string offsetdata, std::string clientdata)
 {
 	Document offsets, client;
-	offsets.Parse(offsetdata.c_str());
-	client.Parse(clientdata.c_str());
+	try {
+		offsets.Parse(offsetdata.c_str());
+		if (offsets.HasParseError()) {
+			std::cout << "[ DMA ] ERROR: Failed to parse offsets.json. Make sure the file is valid JSON." << std::endl;
+			return false;
+		}
+
+		client.Parse(clientdata.c_str());
+		if (client.HasParseError()) {
+			std::cout << "[ DMA ] ERROR: Failed to parse client_dll.json. Make sure the file is valid JSON." << std::endl;
+			return false;
+		}
+	} catch (...) {
+		std::cout << "[ DMA ] ERROR: Exception during JSON parsing." << std::endl;
+		return false;
+	}
 
 	offsetdata.clear(); clientdata.clear();
 
@@ -55,48 +69,47 @@ bool Offset::UpdateOffsets(std::string offsetdata, std::string clientdata)
 	int m_bSpottedByMask = client["client.dll"]["classes"]["EntitySpottedState_t"]["fields"]["m_bSpottedByMask"].GetUint64();
 	Offset::bSpottedByMask = m_entitySpottedState + m_bSpottedByMask;
 
-	//auto print_hex = [](const char* name, uint64_t value) {
-	//	std::cout << std::left << std::setw(30) << name << " : 0x" << std::hex << value << std::dec << std::endl;
-	//};
-	//auto print_int = [](const char* name, int value) {
-	//	std::cout << std::left << std::setw(30) << name << " : " << value << std::endl;
-	//};
+	auto print_hex = [](const char* name, uint64_t value) {
+		std::cout << std::left << std::setw(30) << name << " : 0x" << std::hex << value << std::dec << std::endl;
+	};
+	auto print_int = [](const char* name, int value) {
+		std::cout << std::left << std::setw(30) << name << " : " << value << std::endl;
+	};
 
-	//print_hex("EntityList", Offset::EntityList);
-	//print_hex("Matrix", Offset::Matrix);
-	//print_hex("ViewAngle", Offset::ViewAngle);
-	//print_hex("LocalPlayerController", Offset::LocalPlayerController);
-	//print_hex("LocalPlayerPawn", Offset::LocalPlayerPawn);
-	//print_hex("GlobalVars", Offset::GlobalVars);
-	//print_hex("Health", Offset::Health);
-	//print_hex("TeamID", Offset::TeamID);
-	//print_hex("Armor", Offset::Armor);
-	//print_hex("IsAlive", Offset::IsAlive);
-	//print_hex("MoneyService", Offset::MoneyService);
-	//print_hex("PlayerPawn", Offset::PlayerPawn);
-	//print_hex("iszPlayerName", Offset::iszPlayerName);
-	//print_hex("Pos", Offset::Pos);
-	//print_hex("MaxHealth", Offset::MaxHealth);
-	//print_hex("CurrentHealth", Offset::CurrentHealth);
-	//print_hex("GameSceneNode", Offset::GameSceneNode);
-	//print_hex("BoneArray", Offset::BoneArray);
-	//print_hex("MapName", Offset::MapName);
-	//print_hex("angEyeAngles", Offset::angEyeAngles);
-	//print_hex("vecLastClipCameraPos", Offset::vecLastClipCameraPos);
-	//print_hex("pClippingWeapon", Offset::pClippingWeapon);
-	//print_hex("iShotsFired", Offset::iShotsFired);
-	//print_hex("flFlashDuration", Offset::flFlashDuration);
-	//print_hex("aimPunchAngle", Offset::aimPunchAngle);
-	//print_hex("aimPunchCache", Offset::aimPunchCache);
-	//print_hex("iIDEntIndex", Offset::iIDEntIndex);
-	//print_hex("iTeamNum", Offset::iTeamNum);
-	//print_hex("CameraServices", Offset::CameraServices);
-	//print_hex("iFovStart", Offset::iFovStart);
-	//print_hex("fFlags", Offset::fFlags);
+	std::cout << "[ DMA ] Loaded Offsets:" << std::endl;
+	print_hex("EntityList", Offset::EntityList);
+	print_hex("Matrix", Offset::Matrix);
+	print_hex("ViewAngle", Offset::ViewAngle);
+	print_hex("LocalPlayerController", Offset::LocalPlayerController);
+	print_hex("LocalPlayerPawn", Offset::LocalPlayerPawn);
+	print_hex("GlobalVars", Offset::GlobalVars);
+	print_hex("Health", Offset::Health);
+	print_hex("TeamID", Offset::TeamID);
+	print_hex("Armor", Offset::Armor);
+	print_hex("IsAlive", Offset::IsAlive);
+	print_hex("MoneyService", Offset::MoneyService);
+	print_hex("PlayerPawn", Offset::PlayerPawn);
+	print_hex("iszPlayerName", Offset::iszPlayerName);
+	print_hex("Pos", Offset::Pos);
+	print_hex("MaxHealth", Offset::MaxHealth);
+	print_hex("CurrentHealth", Offset::CurrentHealth);
+	print_hex("GameSceneNode", Offset::GameSceneNode);
+	print_hex("BoneArray", Offset::BoneArray);
+	print_hex("angEyeAngles", Offset::angEyeAngles);
+	print_hex("vecLastClipCameraPos", Offset::vecLastClipCameraPos);
+	print_hex("iShotsFired", Offset::iShotsFired);
+	print_hex("flFlashDuration", Offset::flFlashDuration);
+	print_hex("aimPunchAngle", Offset::aimPunchAngle);
+	print_hex("aimPunchCache", Offset::aimPunchCache);
+	print_hex("iIDEntIndex", Offset::iIDEntIndex);
+	print_hex("iTeamNum", Offset::iTeamNum);
+	print_hex("CameraServices", Offset::CameraServices);
+	print_hex("iFovStart", Offset::iFovStart);
+	print_hex("fFlags", Offset::fFlags);
 
-	//print_int("m_entitySpottedState", m_entitySpottedState);
-	//print_int("m_bSpottedByMask", m_bSpottedByMask);
-	//print_hex("bSpottedByMask", Offset::bSpottedByMask);
+	print_int("m_entitySpottedState", m_entitySpottedState);
+	print_int("m_bSpottedByMask", m_bSpottedByMask);
+	print_hex("bSpottedByMask", Offset::bSpottedByMask);
 
 	return true;
 }
