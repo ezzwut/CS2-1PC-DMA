@@ -1,6 +1,6 @@
-# CS2 DMA Cheat
+# CS2 DMA - In Development
 
-Premium CS2 DMA Software. Optimized with bug fixes, new features, and comprehensive Kmbox support.
+CS2 DMA Software for 1 PC Setup. Optimized with bug fixes, new features.
 
 In this ReadMe you can find the full installation & build guide.
 
@@ -8,9 +8,9 @@ In this ReadMe you can find the full installation & build guide.
 ![Visual Studio](https://img.shields.io/badge/IDE-Visual%20Studio-5C2D91?logo=visual-studio&logoColor=white)
 ![Ready to build](https://img.shields.io/badge/status-ready--to--build-brightgreen)
 
-## ⚡ Installation
+## Installation
 
-Firstly you need to download exe / build it from sources.
+Firstly you need to download exe or build it from sources.
 
 You need to put files in same 
 
@@ -22,10 +22,7 @@ You need to put files in same
 - leechcore.dll
 - vmm.dll
 
-[VT - exe from release (you can compare hash)](https://www.virustotal.com/gui/file/6088ea757fe0bcbf4ee2b718a11f7ccddaa80dfef7ac39e90fa8a2376e94fa3d?nocache=1)
-
-
-## 🔨 Building
+## Building
 
 ```bash
   git clone https://github.com/YourBrand/CS2-DMA-Software.git
@@ -34,7 +31,7 @@ You need to put files in same
 Open the project (slnx file) with visual studio (builded with VS2026). 
 Ready-to-build on Release.
 
-## 📄 Configuration
+## Configuration
 
 Example for net kmbox
 ```json
@@ -58,38 +55,28 @@ Possible values for:
 * "en" - en / ch (English, Chinese)
 * "type" - net / net+ (encrypted net-kmbox) / b (its BPro) / none (to use without kmbox)
     
-## 🤖 Features
+## Features
 
 - **Visuals**
 * ESP: Box, health bar, weapon, distance, name
 * Eye ray
 * Bones
 * Lines to enemy
-- **AimBot**
-* Hotkey, Aimfov, Visual Check, Smooth, IgnoreOnShoot
-* AutoShot
-* Different settings for each weapon-type (rifles, pistols, snipers, shotguns, other). FOV & Smooth & AimTarget (bone) 
 - **Radar**
 * Size (small, big), map auto-selection
-- **TriggerBot**
-* Hotkey, mode (always, onkey), delay
-- **Utilities**
-* Team Check
-- **Configs**
-* Create, Save, Load, Delete
 - **Languages**
-* English 🇺🇸 & Chinese 🇨🇳 supported
+* English & German & Turkish supported
 
 ## Screenshots
 
-![](https://i.ibb.co/fdftpD9R/photo-5318998954227732201-w.jpg)
+![](https://media.discordapp.net/attachments/1504997940844822680/1507483326133309610/image.png?ex=6a209140&is=6a1f3fc0&hm=300f1ad8a9d20041fa6336792e9650c46af78aed37da644ef7f60bea0f657def&=&format=webp&quality=lossless)
 
 
-## ❔ FAQ
+## FAQ
 
 #### How to open & hide menu?
 
-F8 on your main keyboard. All binds works only on main computer.
+insert on your main keyboard. All binds works only on main computer.
 
 #### vmm.dll not found...
 
@@ -98,7 +85,7 @@ Check one more time installation guide. Do not forget to put needed dlls to same
 
 
 
-## 🤝 Credits
+##  Credits
 
 - [@CS2_DMA_Extrnal](https://github.com/Mzzzj/CS2_DMA_Extrnal)
 - [@KmBoxNet](https://github.com/TKazer/KmBoxNetManager)
