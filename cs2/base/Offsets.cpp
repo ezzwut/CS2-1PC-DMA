@@ -6,6 +6,14 @@
 
 using namespace rapidjson;
 
+// Safe helper: returns field value or 0 if missing
+static DWORD SafeGetField(const Value& classObj, const char* fieldName) {
+	if (!classObj.HasMember("fields")) return 0;
+	const auto& fields = classObj["fields"];
+	if (!fields.HasMember(fieldName)) return 0;
+	return (DWORD)fields[fieldName].GetUint64();
+}
+
 bool Offset::UpdateOffsets(std::string offsetdata, std::string clientdata)
 {
 	Document offsets, client;
@@ -28,45 +36,74 @@ bool Offset::UpdateOffsets(std::string offsetdata, std::string clientdata)
 
 	offsetdata.clear(); clientdata.clear();
 
+	// Shorthand references
+	const auto& classes = client["client.dll"]["classes"];
+
+	// === Main offsets from offsets.json ===
 	Offset::EntityList = offsets["client.dll"]["dwEntityList"].GetUint64();
 	Offset::Matrix = offsets["client.dll"]["dwViewMatrix"].GetUint64();
 	Offset::ViewAngle = offsets["client.dll"]["dwViewAngles"].GetUint64();
 	Offset::LocalPlayerController = offsets["client.dll"]["dwLocalPlayerController"].GetUint64();
 	Offset::LocalPlayerPawn = offsets["client.dll"]["dwLocalPlayerPawn"].GetUint64();
 	Offset::GlobalVars = offsets["client.dll"]["dwGlobalVars"].GetUint64();
-	Offset::Health = client["client.dll"]["classes"]["C_BaseEntity"]["fields"]["m_iHealth"].GetUint64();
-	Offset::TeamID = client["client.dll"]["classes"]["C_BaseEntity"]["fields"]["m_iTeamNum"].GetUint64();
-	Offset::Armor = client["client.dll"]["classes"]["CCSPlayerController"]["fields"]["m_iPawnArmor"].GetUint64();
-	Offset::IsAlive = client["client.dll"]["classes"]["CCSPlayerController"]["fields"]["m_bPawnIsAlive"].GetUint64();
-	Offset::MoneyService = client["client.dll"]["classes"]["CCSPlayerController"]["fields"]["m_pInGameMoneyServices"].GetUint64();
-	Offset::PlayerPawn = client["client.dll"]["classes"]["CCSPlayerController"]["fields"]["m_hPlayerPawn"].GetUint64();
-	Offset::iszPlayerName = client["client.dll"]["classes"]["CBasePlayerController"]["fields"]["m_iszPlayerName"].GetUint64();
-	Offset::Pos = client["client.dll"]["classes"]["C_BasePlayerPawn"]["fields"]["m_vOldOrigin"].GetUint64();
-	Offset::MaxHealth = client["client.dll"]["classes"]["C_BaseEntity"]["fields"]["m_iMaxHealth"].GetUint64();
-	Offset::CurrentHealth = client["client.dll"]["classes"]["C_BaseEntity"]["fields"]["m_iHealth"].GetUint64();
-	Offset::GameSceneNode = client["client.dll"]["classes"]["C_BaseEntity"]["fields"]["m_pGameSceneNode"].GetUint64();
-	Offset::BoneArray = client["client.dll"]["classes"]["CSkeletonInstance"]["fields"]["m_modelState"].GetUint64() + 0x80;
-	// MapName is broken and unused
-	Offset::angEyeAngles = client["client.dll"]["classes"]["C_CSPlayerPawn"]["fields"]["m_angEyeAngles"].GetUint64();
-	Offset::vecLastClipCameraPos = client["client.dll"]["classes"]["C_CSPlayerPawn"]["fields"]["m_vecLastClipCameraPos"].GetUint64();
-	Offset::WeaponServices = client["client.dll"]["classes"]["C_BasePlayerPawn"]["fields"]["m_pWeaponServices"].GetUint64();
-	Offset::ActiveWeapon = client["client.dll"]["classes"]["CPlayer_WeaponServices"]["fields"]["m_hActiveWeapon"].GetUint64();
-	Offset::pEntity = client["client.dll"]["classes"]["CEntityInstance"]["fields"]["m_pEntity"].GetUint64();
-	if (Offset::pEntity == 0) Offset::pEntity = 0x10;
-	Offset::designerName = client["client.dll"]["classes"]["CEntityIdentity"]["fields"]["m_designerName"].GetUint64();
-	if (Offset::designerName == 0) Offset::designerName = 0x20;
-	Offset::iShotsFired = client["client.dll"]["classes"]["C_CSPlayerPawn"]["fields"]["m_iShotsFired"].GetUint64();
-	Offset::flFlashDuration = client["client.dll"]["classes"]["C_CSPlayerPawnBase"]["fields"]["m_flFlashDuration"].GetUint64();
-	Offset::aimPunchAngle = client["client.dll"]["classes"]["C_CSPlayerPawn"]["fields"]["m_aimPunchAngle"].GetUint64();
-	Offset::aimPunchCache = client["client.dll"]["classes"]["C_CSPlayerPawn"]["fields"]["m_aimPunchCache"].GetUint64();
-	Offset::iIDEntIndex = client["client.dll"]["classes"]["C_CSPlayerPawn"]["fields"]["m_iIDEntIndex"].GetUint64();
-	Offset::iTeamNum = client["client.dll"]["classes"]["C_BaseEntity"]["fields"]["m_iTeamNum"].GetUint64();
-	Offset::CameraServices = client["client.dll"]["classes"]["C_BasePlayerPawn"]["fields"]["m_pCameraServices"].GetUint64();
-	Offset::iFovStart = client["client.dll"]["classes"]["CCSPlayerBase_CameraServices"]["fields"]["m_iFOVStart"].GetUint64();
-	Offset::fFlags = client["client.dll"]["classes"]["C_BaseEntity"]["fields"]["m_fFlags"].GetUint64();
 
-	int m_entitySpottedState = client["client.dll"]["classes"]["C_CSPlayerPawn"]["fields"]["m_entitySpottedState"].GetUint64();
-	int m_bSpottedByMask = client["client.dll"]["classes"]["EntitySpottedState_t"]["fields"]["m_bSpottedByMask"].GetUint64();
+	// === Fields from client_dll.json (with safe fallbacks) ===
+	Offset::Health = SafeGetField(classes["C_BaseEntity"], "m_iHealth");
+	Offset::TeamID = SafeGetField(classes["C_BaseEntity"], "m_iTeamNum");
+	Offset::Armor = SafeGetField(classes["CCSPlayerController"], "m_iPawnArmor");
+	Offset::IsAlive = SafeGetField(classes["CCSPlayerController"], "m_bPawnIsAlive");
+	Offset::MoneyService = SafeGetField(classes["CCSPlayerController"], "m_pInGameMoneyServices");
+	Offset::PlayerPawn = SafeGetField(classes["CCSPlayerController"], "m_hPlayerPawn");
+	Offset::iszPlayerName = SafeGetField(classes["CBasePlayerController"], "m_iszPlayerName");
+	Offset::bIsLocalPlayerController = SafeGetField(classes["CBasePlayerController"], "m_bIsLocalPlayerController");
+	Offset::Pos = SafeGetField(classes["C_BasePlayerPawn"], "m_vOldOrigin");
+	Offset::MaxHealth = SafeGetField(classes["C_BaseEntity"], "m_iMaxHealth");
+	Offset::CurrentHealth = SafeGetField(classes["C_BaseEntity"], "m_iHealth");
+	Offset::GameSceneNode = SafeGetField(classes["C_BaseEntity"], "m_pGameSceneNode");
+	Offset::BoneArray = SafeGetField(classes["CSkeletonInstance"], "m_modelState") + 0x80;
+	Offset::angEyeAngles = SafeGetField(classes["C_CSPlayerPawn"], "m_angEyeAngles");
+
+	// vecLastClipCameraPos was REMOVED in June 2 2026 update.
+	// Use m_vecLastCameraSetupLocalOrigin from C_BasePlayerPawn as replacement.
+	Offset::vecLastClipCameraPos = SafeGetField(classes["C_CSPlayerPawn"], "m_vecLastClipCameraPos");
+	Offset::vecLastCameraSetupLocalOrigin = SafeGetField(classes["C_BasePlayerPawn"], "m_vecLastCameraSetupLocalOrigin");
+
+	if (Offset::vecLastClipCameraPos == 0 && Offset::vecLastCameraSetupLocalOrigin != 0) {
+		std::cout << "[ DMA ] NOTE: m_vecLastClipCameraPos removed, using m_vecLastCameraSetupLocalOrigin (0x"
+			<< std::hex << Offset::vecLastCameraSetupLocalOrigin << std::dec << ")" << std::endl;
+	}
+
+	Offset::WeaponServices = SafeGetField(classes["C_BasePlayerPawn"], "m_pWeaponServices");
+	Offset::ActiveWeapon = SafeGetField(classes["CPlayer_WeaponServices"], "m_hActiveWeapon");
+	Offset::pEntity = SafeGetField(classes["CEntityInstance"], "m_pEntity");
+	if (Offset::pEntity == 0) Offset::pEntity = 0x10;
+	Offset::designerName = SafeGetField(classes["CEntityIdentity"], "m_designerName");
+	if (Offset::designerName == 0) Offset::designerName = 0x20;
+	Offset::iShotsFired = SafeGetField(classes["C_CSPlayerPawn"], "m_iShotsFired");
+	Offset::flFlashDuration = SafeGetField(classes["C_CSPlayerPawnBase"], "m_flFlashDuration");
+
+	// aimPunchAngle and aimPunchCache were REMOVED in June 2 2026 update.
+	// They moved behind m_pAimPunchServices (a new pointer on C_CSPlayerPawn).
+	Offset::aimPunchAngle = SafeGetField(classes["C_CSPlayerPawn"], "m_aimPunchAngle");
+	Offset::aimPunchCache = SafeGetField(classes["C_CSPlayerPawn"], "m_aimPunchCache");
+	Offset::AimPunchServices = SafeGetField(classes["C_CSPlayerPawn"], "m_pAimPunchServices");
+
+	if (classes.HasMember("CCSPlayer_AimPunchServices")) {
+		Offset::AimPunchAngleInService = SafeGetField(classes["CCSPlayer_AimPunchServices"], "m_predictableBaseAngle");
+	}
+
+	if (Offset::aimPunchAngle == 0 && Offset::AimPunchServices != 0) {
+		std::cout << "[ DMA ] NOTE: m_aimPunchAngle removed, using AimPunchServices->m_predictableBaseAngle" << std::endl;
+	}
+
+	Offset::iIDEntIndex = SafeGetField(classes["C_CSPlayerPawn"], "m_iIDEntIndex");
+	Offset::iTeamNum = SafeGetField(classes["C_BaseEntity"], "m_iTeamNum");
+	Offset::CameraServices = SafeGetField(classes["C_BasePlayerPawn"], "m_pCameraServices");
+	Offset::iFovStart = SafeGetField(classes["CCSPlayerBase_CameraServices"], "m_iFOVStart");
+	Offset::fFlags = SafeGetField(classes["C_BaseEntity"], "m_fFlags");
+
+	int m_entitySpottedState = SafeGetField(classes["C_CSPlayerPawn"], "m_entitySpottedState");
+	int m_bSpottedByMask = SafeGetField(classes["EntitySpottedState_t"], "m_bSpottedByMask");
 	Offset::bSpottedByMask = m_entitySpottedState + m_bSpottedByMask;
 
 	auto print_hex = [](const char* name, uint64_t value) {
@@ -97,10 +134,13 @@ bool Offset::UpdateOffsets(std::string offsetdata, std::string clientdata)
 	print_hex("BoneArray", Offset::BoneArray);
 	print_hex("angEyeAngles", Offset::angEyeAngles);
 	print_hex("vecLastClipCameraPos", Offset::vecLastClipCameraPos);
+	print_hex("vecLastCameraSetupLocal", Offset::vecLastCameraSetupLocalOrigin);
 	print_hex("iShotsFired", Offset::iShotsFired);
 	print_hex("flFlashDuration", Offset::flFlashDuration);
 	print_hex("aimPunchAngle", Offset::aimPunchAngle);
 	print_hex("aimPunchCache", Offset::aimPunchCache);
+	print_hex("AimPunchServices", Offset::AimPunchServices);
+	print_hex("AimPunchAngleInSvc", Offset::AimPunchAngleInService);
 	print_hex("iIDEntIndex", Offset::iIDEntIndex);
 	print_hex("iTeamNum", Offset::iTeamNum);
 	print_hex("CameraServices", Offset::CameraServices);
@@ -112,4 +152,4 @@ bool Offset::UpdateOffsets(std::string offsetdata, std::string clientdata)
 	print_hex("bSpottedByMask", Offset::bSpottedByMask);
 
 	return true;
-}
+}

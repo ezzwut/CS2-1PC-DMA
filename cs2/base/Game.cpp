@@ -67,6 +67,8 @@ bool CGame::UpdateEntityListEntry()
 	DWORD64 EntityListEntry = 0;
 	if (!ProcessMgr.ReadMemory<DWORD64>(gGame.GetEntityListAddress(), EntityListEntry))
 		return false;
+	if (EntityListEntry == 0)
+		return false;
 	if (!ProcessMgr.ReadMemory<DWORD64>(EntityListEntry + 0x10, EntityListEntry))
 		return false;
 

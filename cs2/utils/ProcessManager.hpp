@@ -251,7 +251,8 @@ public:
 	bool ReadMemory(DWORD64 Address, ReadType& Value, int Size)
 	{
 		_is_invalid(ProcessID, false);
-		if (VMMDLL_MemReadEx(this->HANDLE, ProcessID, Address, (PBYTE)&Value, Size, 0, VMMDLL_FLAG_NOCACHE | VMMDLL_FLAG_NOPAGING | VMMDLL_FLAG_ZEROPAD_ON_FAIL | VMMDLL_FLAG_NOPAGING_IO))
+		DWORD cbRead = 0;
+		if (VMMDLL_MemReadEx(this->HANDLE, ProcessID, Address, (PBYTE)&Value, Size, &cbRead, VMMDLL_FLAG_NOCACHE) && cbRead == Size)
 			return true;
 		return false;
 	}
@@ -260,8 +261,8 @@ public:
 	bool ReadMemory(DWORD64 Address, ReadType& Value)
 	{
 		_is_invalid(ProcessID, false);
-
-		if (VMMDLL_MemReadEx(this->HANDLE, ProcessID, Address, (PBYTE)&Value, sizeof(ReadType), 0, VMMDLL_FLAG_NOCACHE | VMMDLL_FLAG_NOPAGING | VMMDLL_FLAG_ZEROPAD_ON_FAIL | VMMDLL_FLAG_NOPAGING_IO))
+		DWORD cbRead = 0;
+		if (VMMDLL_MemReadEx(this->HANDLE, ProcessID, Address, (PBYTE)&Value, sizeof(ReadType), &cbRead, VMMDLL_FLAG_NOCACHE) && cbRead == sizeof(ReadType))
 			return true;
 		return false;
 	}
@@ -278,7 +279,7 @@ public:
 	void ExecuteReadScatter(VMMDLL_SCATTER_HANDLE handle)
 	{
 		VMMDLL_Scatter_ExecuteRead(handle);
-		VMMDLL_Scatter_Clear(handle, ProcessID, NULL);
+		VMMDLL_Scatter_CloseHandle(handle);
 	}
 
 	template <typename ReadType>
@@ -403,32 +404,63 @@ public:
 
 		if (Winver >= 22000) {
 			auto pids = GetPidListFromName("csrss.exe");
-			for (size_t i = 0; i < pids.size(); i++)
-			{
-				auto pid = pids[i];
-				uintptr_t tmp = VMMDLL_ProcessGetModuleBaseU(this->HANDLE, pid, const_cast<LPSTR>("win32ksgd.sys"));
-				if (!tmp) continue;
-				uintptr_t g_session_global_slots = tmp + 0x3110;
-				uintptr_t user_session_state = ReadMemoryExtra<uintptr_t>(ReadMemoryExtra<uintptr_t>(ReadMemoryExtra<uintptr_t>(g_session_global_slots, pid), pid), pid);
-				gafAsyncKeyStateExport = user_session_state + 0x3690;
-				if (gafAsyncKeyStateExport > 0x7FFFFFFFFFFF)
-					break;
-			}
-			if (!(gafAsyncKeyStateExport > 0x7FFFFFFFFFFF)) {
-				// Fallback for newer win11 builds (e.g. 22621/22631+)
+			
+			// Try multiple offset combinations for different Win11 builds
+			struct WinOffsets { uintptr_t sessionSlots; uintptr_t keyStateOff; };
+			WinOffsets offsetsToTry[] = {
+				{ 0x3110, 0x3690 },  // Standard Win11 22H2+
+				{ 0x3120, 0x3690 },  // Some 23H2+ builds
+				{ 0x3110, 0x36A0 },  // Some 24H2 builds
+				{ 0x3120, 0x36A0 },  // Some Insider builds
+				{ 0x3100, 0x3690 },  // Fallback
+				{ 0x3110, 0x3680 },  // Fallback
+			};
+
+			for (auto& offPair : offsetsToTry) {
+				if (gafAsyncKeyStateExport > 0x7FFFFFFFFFFF) break;
+				
 				for (size_t i = 0; i < pids.size(); i++)
 				{
 					auto pid = pids[i];
 					uintptr_t tmp = VMMDLL_ProcessGetModuleBaseU(this->HANDLE, pid, const_cast<LPSTR>("win32ksgd.sys"));
 					if (!tmp) continue;
-					uintptr_t g_session_global_slots = tmp + 0x3110;
+					uintptr_t g_session_global_slots = tmp + offPair.sessionSlots;
 					uintptr_t user_session_state = ReadMemoryExtra<uintptr_t>(ReadMemoryExtra<uintptr_t>(ReadMemoryExtra<uintptr_t>(g_session_global_slots, pid), pid), pid);
-					gafAsyncKeyStateExport = user_session_state + 0x3690;
+					gafAsyncKeyStateExport = user_session_state + offPair.keyStateOff;
 					if (gafAsyncKeyStateExport > 0x7FFFFFFFFFFF)
 						break;
 				}
-				if (!(gafAsyncKeyStateExport > 0x7FFFFFFFFFFF))
-					std::cout << "[ WG ] Error: Keys-1 (Failed to locate gafAsyncKeyState)" << std::endl;
+			}
+			if (!(gafAsyncKeyStateExport > 0x7FFFFFFFFFFF)) {
+				// Fallback to searching EAT in win32kbase.sys for all builds if win32ksgd.sys pointer scanning fails
+				std::cout << "[ DMA ] win32ksgd.sys pointer scan failed, trying EAT in win32kbase.sys..." << std::endl;
+				PVMMDLL_MAP_EAT eat_map = NULL;
+				PVMMDLL_MAP_EATENTRY eat_map_entry;
+				bool result = VMMDLL_Map_GetEATU(this->HANDLE, GetProcID_Keys((LPSTR)"winlogon.exe") | VMMDLL_PID_PROCESS_WITH_KERNELMEMORY, (LPSTR)"win32kbase.sys", &eat_map);
+				if (!result || !eat_map) {
+					std::cout << "[ DMA ] Failed EAT on winlogon.exe, trying csrss.exe..." << std::endl;
+					if (pids.size() > 0) {
+						result = VMMDLL_Map_GetEATU(this->HANDLE, pids[0] | VMMDLL_PID_PROCESS_WITH_KERNELMEMORY, (LPSTR)"win32kbase.sys", &eat_map);
+					}
+				}
+				
+				if (result && eat_map) {
+					for (int i = 0; i < eat_map->cMap; i++)
+					{
+						eat_map_entry = eat_map->pMap + i;
+						if (strcmp(eat_map_entry->uszFunction, "gafAsyncKeyState") == 0)
+						{
+							gafAsyncKeyStateExport = eat_map_entry->vaFunction;
+							std::cout << "[ DMA ] Found gafAsyncKeyState via EAT in win32kbase.sys!" << std::endl;
+							break;
+						}
+					}
+					VMMDLL_MemFree(eat_map);
+				}
+				
+				if (!(gafAsyncKeyStateExport > 0x7FFFFFFFFFFF)) {
+					std::cout << "[ WG ] Error: Keys-1 (Failed to locate gafAsyncKeyState in any module)" << std::endl;
+				}
 			}
 		} else {
 			PVMMDLL_MAP_EAT eat_map = NULL;

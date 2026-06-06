@@ -28,6 +28,7 @@ public:
 	bool GetPlayerName();
 	bool GetArmor();
 	bool GetMoney();
+	bool GetIsLocalPlayerController();
 	DWORD64 GetPlayerPawnAddress();
 };
 
