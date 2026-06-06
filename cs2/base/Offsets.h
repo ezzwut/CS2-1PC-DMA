@@ -20,6 +20,7 @@ namespace Offset
 	inline	DWORD PlayerPawn;
 	inline	DWORD iszPlayerName;
 	inline	DWORD MoneyService;
+	inline  DWORD bIsLocalPlayerController;
 
 	
 	inline DWORD Pos;
@@ -39,6 +40,9 @@ namespace Offset
 	inline DWORD aimPunchAngle;
 	inline DWORD aimPunchCache;
 	inline DWORD iIDEntIndex;
+	inline DWORD AimPunchServices;
+	inline DWORD AimPunchAngleInService;
+	inline DWORD vecLastCameraSetupLocalOrigin;
 	inline DWORD iTeamNum;
 	inline DWORD CameraServices;
 	inline DWORD iFovStart;

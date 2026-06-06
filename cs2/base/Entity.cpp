@@ -7,24 +7,14 @@ bool CEntity::UpdateController(const DWORD64& PlayerControllerAddress)
 
 	this->Controller.Address = PlayerControllerAddress;
 
-	if (!this->Controller.GetHealth()) {
-		std::cout << "\t\GetHealth FAIL!" << std::endl;
+	if (!this->Controller.GetHealth())
 		return false;
-	}
 
-	if (!this->Controller.GetArmor()) {
-		std::cout << "\t\tGetArmor FAIL!" << std::endl;
+	if (!this->Controller.GetArmor())
 		return false;
-	}
-	//if (!this->Controller.GetMoney()) {
-	//	std::cout << "\t\GetMoney FAIL!" << std::endl;
-	//	return false;
-	//}
 
-	if (!this->Controller.GetIsAlive()) {
-		std::cout << "\t\IsAlive FAIL!" << std::endl;
+	if (!this->Controller.GetIsAlive())
 		return false;
-	}
 
 	if (!this->Controller.GetTeamID())
 		return false;
@@ -33,6 +23,8 @@ bool CEntity::UpdateController(const DWORD64& PlayerControllerAddress)
 		return false;
 
 	this->Pawn.Address = this->Controller.GetPlayerPawnAddress();
+	if (this->Pawn.Address == 0)
+		return false;
 
 	return true;
 }
@@ -44,86 +36,25 @@ bool CEntity::UpdatePawn(const DWORD64& PlayerPawnAddress)
 
 	this->Pawn.Address = PlayerPawnAddress;
 
-	if (!this->Pawn.GetCameraPos())
-	{
-#ifdef DEBUG_PRINTS
-		std::cout << "\t\tFailed to update GetCameraPos" << std::endl;
-#endif // DEBUG_PRINTS
+	// === CRITICAL FIELDS ONLY — ScatterReadThreads handles the rest ===
+	if (!this->Pawn.GetPos())
 		return false;
-	}
-	if (!this->Pawn.GetPos()) {
-#ifdef DEBUG_PRINTS
-		std::cout << "\t\tFailed to update GetPos" << std::endl;
-#endif // DEBUG_PRINTS
+	if (!this->Pawn.GetHealth())
 		return false;
-	}
-	if (!this->Pawn.GetViewAngle()) {
-#ifdef DEBUG_PRINTS
-		std::cout << "\t\tFailed to update GetViewAngle" << std::endl;
-#endif // DEBUG_PRINTS
+	if (!this->Pawn.GetTeamID())
 		return false;
-	}
-	if (!this->Pawn.GetWeaponName()) {
-#ifdef DEBUG_PRINTS
-		std::cout << "\t\tFailed to update GetWeaponName" << std::endl;
-#endif // DEBUG_PRINTS
-		return false;
-	}
-	if (!this->Pawn.GetAimPunchAngle()) {
-#ifdef DEBUG_PRINTS
-		std::cout << "\t\tFailed to update GetAimPunchAngle" << std::endl;
-#endif // DEBUG_PRINTS
-		return false;
-	}
-	if (!this->Pawn.GetShotsFired()) {
-#ifdef DEBUG_PRINTS
-		std::cout << "\t\tFailed to update GetShotsFired" << std::endl;
-#endif // DEBUG_PRINTS
-		return false;
-	}
-	if (!this->Pawn.GetHealth()) {
-#ifdef DEBUG_PRINTS
-		std::cout << "\t\tFailed to update GetHealth" << std::endl;
-#endif // DEBUG_PRINTS
-		return false;
-	}
-	if (!this->Pawn.GetTeamID()) {
-#ifdef DEBUG_PRINTS
-		std::cout << "\t\tFailed to update GetTeamID" << std::endl;
-#endif // DEBUG_PRINTS
-		return false;
-	}
-	if (!this->Pawn.GetFov()) {
-#ifdef DEBUG_PRINTS
-		std::cout << "\t\tFailed to update GetFov" << std::endl;
-#endif // DEBUG_PRINTS
-		return false;
-	}
-	if (!this->Pawn.GetSpotted()) {
-#ifdef DEBUG_PRINTS
-		std::cout << "\t\tFailed to update GetSpotted" << std::endl;
-#endif // DEBUG_PRINTS
-		return false;
-	}
-	if (!this->Pawn.GetFFlags()) {
-#ifdef DEBUG_PRINTS
-		std::cout << "\t\tFailed to update GetFFlags" << std::endl;
-#endif // DEBUG_PRINTS
-		return false;
-	}
-	if (!this->Pawn.GetAimPunchCache()) {
-#ifdef DEBUG_PRINTS
-		std::cout << "\t\tFailed to update GetAimPunchCache" << std::endl;
-#endif // DEBUG_PRINTS
-		return false;
+
+	// Resolve bone array address so scatter thread knows where to read
+	DWORD64 GameSceneNode = 0;
+	if (ProcessMgr.ReadMemory<DWORD64>(PlayerPawnAddress + Offset::GameSceneNode, GameSceneNode) && GameSceneNode != 0) {
+		ProcessMgr.ReadMemory<DWORD64>(GameSceneNode + Offset::BoneArray, this->Pawn.BoneData.BoneArrayAddress);
 	}
 
-	if (!this->Pawn.BoneData.UpdateAllBoneData(PlayerPawnAddress)) {
-#ifdef DEBUG_PRINTS
-		std::cout << "\t\tFailed to update UpdateAllBoneData" << std::endl;
-#endif // DEBUG_PRINTS
-		return false;
+	// Camera pos fallback
+	if (!this->Pawn.GetCameraPos()) {
+		this->Pawn.CameraPos = this->Pawn.Pos;
 	}
+	this->Pawn.GetViewAngle(); // needed for initial render
 
 	return true;
 }
@@ -172,6 +103,13 @@ bool PlayerController::GetMoney()
 	return GetDataAddressWithOffset<int>(addr, 64, this->Money);
 }
 
+bool PlayerController::GetIsLocalPlayerController()
+{
+	bool isLocal = false;
+	GetDataAddressWithOffset<bool>(Address, Offset::bIsLocalPlayerController, isLocal);
+	return isLocal;
+}
+
 bool PlayerPawn::GetViewAngle()
 {
 	return GetDataAddressWithOffset<Vec2>(Address, Offset::angEyeAngles, this->ViewAngle);
@@ -179,7 +117,16 @@ bool PlayerPawn::GetViewAngle()
 
 bool PlayerPawn::GetCameraPos()
 {
-	return GetDataAddressWithOffset<Vec3>(Address, Offset::vecLastClipCameraPos, this->CameraPos);
+	// Try original field first
+	if (Offset::vecLastClipCameraPos != 0) {
+		return GetDataAddressWithOffset<Vec3>(Address, Offset::vecLastClipCameraPos, this->CameraPos);
+	}
+	// Fallback: use vecLastCameraSetupLocalOrigin (June 2 2026+ builds)
+	if (Offset::vecLastCameraSetupLocalOrigin != 0) {
+		return GetDataAddressWithOffset<Vec3>(Address, Offset::vecLastCameraSetupLocalOrigin, this->CameraPos);
+	}
+	// Both missing: will fallback to Pos in UpdatePawn
+	return false;
 }
 
 bool PlayerPawn::GetSpotted()
@@ -241,7 +188,21 @@ bool PlayerPawn::GetShotsFired()
 
 bool PlayerPawn::GetAimPunchAngle()
 {
-	return GetDataAddressWithOffset<Vec2>(Address, Offset::aimPunchAngle, this->AimPunchAngle);
+	// Try original direct field first
+	if (Offset::aimPunchAngle != 0) {
+		return GetDataAddressWithOffset<Vec2>(Address, Offset::aimPunchAngle, this->AimPunchAngle);
+	}
+	// Fallback: read through AimPunchServices pointer (June 2 2026+ builds)
+	if (Offset::AimPunchServices != 0 && Offset::AimPunchAngleInService != 0) {
+		DWORD64 punchService = 0;
+		if (ProcessMgr.ReadMemory<DWORD64>(Address + Offset::AimPunchServices, punchService) && punchService != 0) {
+			return GetDataAddressWithOffset<Vec2>(punchService, Offset::AimPunchAngleInService, this->AimPunchAngle);
+		}
+	}
+	// Both missing: zero out and succeed
+	this->AimPunchAngle.x = 0;
+	this->AimPunchAngle.y = 0;
+	return true;
 }
 
 bool PlayerPawn::GetTeamID()
@@ -251,6 +212,12 @@ bool PlayerPawn::GetTeamID()
 
 bool PlayerPawn::GetAimPunchCache()
 {
+	if (Offset::aimPunchCache == 0) {
+		// Field removed in June 2 2026 update — zero out and succeed
+		this->AimPunchCache.Count = 0;
+		this->AimPunchCache.Data = 0;
+		return true;
+	}
 	return GetDataAddressWithOffset<C_UTL_VECTOR>(Address, Offset::aimPunchCache, this->AimPunchCache);
 }
 
