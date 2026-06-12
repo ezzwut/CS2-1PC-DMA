@@ -1,5 +1,6 @@
 #pragma once
 
+#include <mutex>
 #include "../radar/mapsdata.h"
 #include "Game.h"
 #include "Entity.h"
@@ -14,6 +15,8 @@ namespace Cheats
 	inline CEntity LocalEntityPlayer;
 
 	inline std::vector<CEntity> EntityList;
+	inline std::vector<CEntity> RenderEntityList;
+	inline std::mutex EntityMutex;
 
 	inline char mapname[32];
 }

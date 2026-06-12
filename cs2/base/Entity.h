@@ -56,6 +56,7 @@ public:
 	int Fov;
 	DWORD64 bSpottedByMask;
 	int fFlags;
+	DWORD ActiveWeaponHandle = 0;
 public:
 	bool GetPos();
 	bool GetViewAngle();
@@ -86,8 +87,9 @@ public:
 	int LocalPlayerControllerIndex;
 	Vec2 TempViewAngle;
 	DWORD64 TempbSpottedByMask;
+	int SlotIndex = -1;
 public:
-	bool UpdateController(const DWORD64& PlayerControllerAddress);
+	bool UpdateController(const DWORD64& PlayerControllerAddress, bool skipTeammates = false, int localTeam = 0);
 
 	bool UpdatePawn(const DWORD64& PlayerPawnAddress);
 

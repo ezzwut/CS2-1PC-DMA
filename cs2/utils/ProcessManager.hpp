@@ -101,8 +101,14 @@ public:
 	StatusCode Attach(std::string ProcessName)
 	{
 		this->AttachProcessName = ProcessName;
-		LPCSTR args[] = { (LPCSTR)"",(LPCSTR)"-device", (LPCSTR)"FPGA" };
-		this->HANDLE = VMMDLL_Initialize(3, args);
+		LPCSTR args[] = { (LPCSTR)"",(LPCSTR)"-device", (LPCSTR)"FPGA", (LPCSTR)"-v" };
+		
+		for (int retries = 0; retries < 5; retries++) {
+			this->HANDLE = VMMDLL_Initialize(4, args);
+			if (this->HANDLE) break;
+			std::cout << "[ DMA ] VMMDLL_Initialize failed! Retrying in 1 second... (" << retries + 1 << "/5)" << std::endl;
+			Sleep(1000);
+		}
 
 		if (this->HANDLE) {
 			std::cout << "[ DMA ] VMMDLL_Initialize succeeded!" << std::endl;
@@ -252,7 +258,7 @@ public:
 	{
 		_is_invalid(ProcessID, false);
 		DWORD cbRead = 0;
-		if (VMMDLL_MemReadEx(this->HANDLE, ProcessID, Address, (PBYTE)&Value, Size, &cbRead, VMMDLL_FLAG_NOCACHE) && cbRead == Size)
+		if (VMMDLL_MemReadEx(this->HANDLE, ProcessID, Address, (PBYTE)&Value, Size, &cbRead, VMMDLL_FLAG_NOCACHE | VMMDLL_FLAG_NOPAGING | VMMDLL_FLAG_NOPAGING_IO) && cbRead == Size)
 			return true;
 		return false;
 	}
@@ -262,14 +268,14 @@ public:
 	{
 		_is_invalid(ProcessID, false);
 		DWORD cbRead = 0;
-		if (VMMDLL_MemReadEx(this->HANDLE, ProcessID, Address, (PBYTE)&Value, sizeof(ReadType), &cbRead, VMMDLL_FLAG_NOCACHE) && cbRead == sizeof(ReadType))
+		if (VMMDLL_MemReadEx(this->HANDLE, ProcessID, Address, (PBYTE)&Value, sizeof(ReadType), &cbRead, VMMDLL_FLAG_NOCACHE | VMMDLL_FLAG_NOPAGING | VMMDLL_FLAG_NOPAGING_IO) && cbRead == sizeof(ReadType))
 			return true;
 		return false;
 	}
 
 	VMMDLL_SCATTER_HANDLE CreateScatterHandle()
 	{
-		return VMMDLL_Scatter_Initialize(this->HANDLE, ProcessID, VMMDLL_FLAG_NOCACHE);
+		return VMMDLL_Scatter_Initialize(this->HANDLE, ProcessID, VMMDLL_FLAG_NOCACHE | VMMDLL_FLAG_NOPAGING | VMMDLL_FLAG_NOPAGING_IO);
 	}
 
 	void AddScatterReadRequest(VMMDLL_SCATTER_HANDLE handle, uint64_t address, void* buffer, size_t size)

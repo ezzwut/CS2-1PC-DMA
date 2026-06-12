@@ -54,23 +54,29 @@ void Cheats::Run()
 		if (MenuConfig::ShowRadar)
 			Radar.UpdateMap(mapname);
 
-		for (int i = 0; i < EntityList.size(); i++)
+		// THE FIX: Take a local copy under lock so we never read during a swap
+		std::vector<CEntity> frameEntities;
 		{
-			CEntity Entity = EntityList[i];
+			std::lock_guard<std::mutex> lock(EntityMutex);
+			frameEntities = RenderEntityList;
+		}
 
-			if (Entity.Pawn.Health <= 0) {
+		for (int i = 0; i < (int)frameEntities.size(); i++)
+		{
+			CEntity Entity = frameEntities[i];
+
+			if (Entity.Pawn.Health <= 0)
 				continue;
-			}
+
+			// Always skip teammates
+			if (Entity.Controller.TeamID == LocalEntityPlayer.Controller.TeamID)
+				continue;
 
 			if (MenuConfig::ShowRadar)
-				Radar.AddPoint(LocalEntityPlayer.Pawn.Pos, Entity.Pawn.ViewAngle.y, Entity.Pawn.Pos, ImColor(237, 85, 106, 200), Entity.Pawn.ViewAngle.y, (int)(Entity.Controller.TeamID == LocalEntityPlayer.Controller.TeamID), Entity.Pawn.Health);
+				Radar.AddPoint(LocalEntityPlayer.Pawn.Pos, Entity.Pawn.ViewAngle.y, Entity.Pawn.Pos, ImColor(237, 85, 106, 200), Entity.Pawn.ViewAngle.y, 0, Entity.Pawn.Health);
 
-			if (MenuConfig::TeamCheck && Entity.Controller.TeamID == LocalEntityPlayer.Controller.TeamID)
+			if (!Entity.IsInScreen())
 				continue;
-
-			if (!Entity.IsInScreen()) {
-				continue;
-			}
 
 			if (MenuConfig::ShowBoneESP)
 				Render::DrawBone(Entity, MenuConfig::BoneColor, 1.3);
@@ -98,6 +104,10 @@ void Cheats::Run()
 			default:
 				break;
 			}
+
+			// Reject absurdly large boxes from garbage bone data
+			if (Rect.z > 2000 || Rect.w > 2000 || Rect.z < 1 || Rect.w < 1)
+				continue;
 
 			if (MenuConfig::ShowLineToEnemy)
 				Render::LineToEnemy(Rect, MenuConfig::LineToEnemyColor, 1.2);

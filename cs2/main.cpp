@@ -69,7 +69,7 @@ void main(HMODULE module) {
 	SetConsoleTitleA("SysUpdate");
 	KillOtherInstances();
 
-	std::cout << " -- Premium CS2 DMA Cheat -- " << std::endl << std::endl;
+	std::cout << " -- Beta Esp by ezzwut -- " << std::endl << std::endl;
 
 	std::cout << "[ DMA ] Starting..." << std::endl;
 
@@ -103,6 +103,27 @@ void main(HMODULE module) {
 		std::cout << "[ DMA ] Error! Failed to call InitAddress()." << std::endl;
 		return;
 	}
+
+	// Verify offsets are correct
+	std::cout << "[ DMA ] Verifying offsets..." << std::endl;
+	DWORD64 testEntityList = 0;
+	ProcessMgr.ReadMemory<DWORD64>(gGame.GetEntityListAddress(), testEntityList);
+	DWORD64 testLocalCtrl = 0;
+	ProcessMgr.ReadMemory<DWORD64>(gGame.GetLocalControllerAddress(), testLocalCtrl);
+
+	if (testEntityList == 0 && testLocalCtrl == 0) {
+		std::cout << std::endl;
+		std::cout << "[ DMA ] ========================================================" << std::endl;
+		std::cout << "[ DMA ] ERROR: OFFSETS NOT UP TO DATE!                          " << std::endl;
+		std::cout << "[ DMA ] The game has updated and the cheat cannot read memory.   " << std::endl;
+		std::cout << "[ DMA ] Please close this window and double click the            " << std::endl;
+		std::cout << "[ DMA ] 'update_offsets.bat' file to fix it automatically!       " << std::endl;
+		std::cout << "[ DMA ] ========================================================" << std::endl;
+		std::cout << std::endl;
+		system("pause");
+		return;
+	}
+	std::cout << "[ DMA ] Offsets are up to date!" << std::endl;
 
 	if (!fs::directory_entry(MenuConfig::path).exists()) {
 		fs::create_directory(MenuConfig::path);
