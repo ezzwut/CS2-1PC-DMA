@@ -1,11 +1,17 @@
 #include "Entity.h"
 
-bool CEntity::UpdateController(const DWORD64& PlayerControllerAddress)
+bool CEntity::UpdateController(const DWORD64& PlayerControllerAddress, bool skipTeammates, int localTeam)
 {
 	if (PlayerControllerAddress == 0)
 		return false;
 
 	this->Controller.Address = PlayerControllerAddress;
+
+	if (!this->Controller.GetTeamID())
+		return false;
+
+	if (skipTeammates && localTeam != 0 && this->Controller.TeamID == localTeam)
+		return false;
 
 	if (!this->Controller.GetHealth())
 		return false;
@@ -14,9 +20,6 @@ bool CEntity::UpdateController(const DWORD64& PlayerControllerAddress)
 		return false;
 
 	if (!this->Controller.GetIsAlive())
-		return false;
-
-	if (!this->Controller.GetTeamID())
 		return false;
 
 	if (!this->Controller.GetPlayerName())
@@ -136,17 +139,27 @@ bool PlayerPawn::GetSpotted()
 
 bool PlayerPawn::GetWeaponName()
 {
-	this->WeaponName = "Unknown";
 	try {
 		DWORD64 WeaponServices = 0;
-		if (!ProcessMgr.ReadMemory(this->Address + Offset::WeaponServices, WeaponServices) || WeaponServices == 0)
+		if (!ProcessMgr.ReadMemory(this->Address + Offset::WeaponServices, WeaponServices) || WeaponServices == 0) {
+			this->WeaponName = "Unknown";
+			this->ActiveWeaponHandle = 0;
 			return true;
+		}
 
-		DWORD ActiveWeaponHandle = 0;
-		if (!ProcessMgr.ReadMemory(WeaponServices + Offset::ActiveWeapon, ActiveWeaponHandle) || ActiveWeaponHandle == 0xFFFFFFFF)
+		DWORD activeHandle = 0;
+		if (!ProcessMgr.ReadMemory(WeaponServices + Offset::ActiveWeapon, activeHandle) || activeHandle == 0xFFFFFFFF) {
+			this->WeaponName = "Unknown";
+			this->ActiveWeaponHandle = 0;
 			return true;
+		}
 
-		DWORD ActiveWeaponIndex = ActiveWeaponHandle & 0x7FFF;
+		// Cache check!
+		if (activeHandle == this->ActiveWeaponHandle && this->WeaponName != "Unknown" && !this->WeaponName.empty()) {
+			return true;
+		}
+
+		DWORD ActiveWeaponIndex = activeHandle & 0x7FFF;
 		DWORD64 EntityListEntry = 0;
 		if (!ProcessMgr.ReadMemory(gGame.GetEntityListAddress() + 8 * (ActiveWeaponIndex >> 9) + 0x10, EntityListEntry) || EntityListEntry == 0)
 			return true;
@@ -172,11 +185,15 @@ bool PlayerPawn::GetWeaponName()
 		if (prefixPos != std::string::npos) {
 			weaponName = weaponName.substr(prefixPos + 7);
 		}
+		
+		this->ActiveWeaponHandle = activeHandle;
 		this->WeaponName = weaponName;
 
 		return true;
 	}
 	catch (const std::exception& ex) {
+		this->WeaponName = "Unknown";
+		this->ActiveWeaponHandle = 0;
 		return true;
 	}
 }

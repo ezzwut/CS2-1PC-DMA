@@ -144,7 +144,11 @@ void Cheats::Menu()
 				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 10);
 				if (ImGui::Button("Refresh DMA", ImVec2(ImGui::GetContentRegionAvail().x - 10, 25))) {
 					ProcessMgr.RefindGame();
-					Cheats::EntityList.clear();
+					{
+						std::lock_guard<std::mutex> lock(Cheats::EntityMutex);
+						Cheats::EntityList.clear();
+						Cheats::RenderEntityList.clear();
+					}
 					gGame.InitAddress();
 				}
 
@@ -161,6 +165,34 @@ void Cheats::Menu()
 		ImGui::SameLine();
 		ImGui::BeginChild("Container##2", ImVec2((globalVars::windowx) / 10 * 7.2f, globalVars::windowy - 30.f), true);
 		{
+			// DMA Strategy & Performance
+			ImGui::Text("DMA Performance & Tuning");
+			ImGui::Spacing();
+			
+			const char* strategies[] = { 
+				"0: Dual-Thread (Blocking) [Legacy]", 
+				"1: Dual-Thread (Non-Blocking)", 
+				"2: Fast Scan (64 Slots, Team Skip)", 
+				"3: Low-Freq Scan (128 Slots, Team Skip)", 
+				"4: Distributed Scan (4 Slots/30ms)" 
+			};
+			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 10);
+			if (ImGui::Combo("DMA Strategy", &MenuConfig::DMAStrategy, strategies, IM_ARRAYSIZE(strategies))) {
+				// We can optionally clear entities on strategy change to prevent stale elements
+				std::lock_guard<std::mutex> lock(Cheats::EntityMutex);
+				Cheats::EntityList.clear();
+				Cheats::RenderEntityList.clear();
+			}
+			
+			ImGui::Columns(2, "dma_stats_cols", false);
+			ImGui::Text("Scatter Rate: %d Hz", MenuConfig::ScatterRateHz);
+			ImGui::Text("Scatter Latency: %.1f ms", MenuConfig::ScatterDurationMs);
+			ImGui::NextColumn();
+			ImGui::Text("Scan Latency: %.1f ms", MenuConfig::ScanDurationMs);
+			ImGui::Text("Active Players: %d", MenuConfig::ActiveEntitiesCount);
+			ImGui::Columns(1);
+			ImGui::Separator();
+
 			// Visuals Only
 			Gui.MyCheckBox(lang.utilities_teamcheck.c_str(), &MenuConfig::TeamCheck);
 			ImGui::Separator();

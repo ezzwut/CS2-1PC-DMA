@@ -46,6 +46,12 @@ namespace MenuConfig
 	inline bool ShowLineToEnemy = false;
 	inline ImColor LineToEnemyColor = ImColor(255, 255, 255, 220);
 
+	// DMA strategy tuning options
+	inline int DMAStrategy = 2; // 0: legacy, 1: non-blocking 128, 2: fast 64, 3: low-freq 128, 4: distributed
+	inline float ScanDurationMs = 0.0f;
+	inline float ScatterDurationMs = 0.0f;
+	inline int ScatterRateHz = 0;
+	inline int ActiveEntitiesCount = 0;
 }
 
 namespace GunList {
